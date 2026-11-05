@@ -29,12 +29,12 @@ COPY --from=vendor /app/vendor ./vendor
 COPY . .
 COPY --from=assets /app/public/build ./public/build
 
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+RUN rm -f .env public/hot bootstrap/cache/*.php \
+    && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --optimize --no-dev \
-    && chown -R www-data:www-data storage bootstrap/cache
-
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && printf '%s\n' '#!/bin/sh' 'set -e' 'mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs' 'chown -R www-data:www-data storage bootstrap/cache' 'php artisan storage:link || true' 'php artisan config:cache' 'php artisan view:cache' 'if [ "$RUN_MIGRATIONS" = "true" ]; then php artisan migrate --force; fi' 'exec "$@"' > /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80
 ENTRYPOINT ["entrypoint.sh"]
