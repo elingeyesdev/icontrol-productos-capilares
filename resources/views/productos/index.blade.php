@@ -97,7 +97,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($p->activo)
+                                    @if($p->estado)
                                         <span class="estado-activo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Activo</span>
                                     @else
                                         <span class="estado-inactivo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Inactivo</span>
@@ -113,7 +113,7 @@
                                                     precio: {{ $p->precio }},
                                                     stock: {{ $p->stock }},
                                                     id_categoria: {{ $p->id_categoria }},
-                                                    activo: {{ $p->activo ? 'true' : 'false' }},
+                                                    estado: {{ $p->estado ? 'true' : 'false' }},
                                                     preview: {{ $p->imagen_producto ? "'".asset('images/'.$p->imagen_producto)."'" : 'null' }}
                                                 }">
                                             <i class="bi bi-pencil-fill"></i>
@@ -281,7 +281,7 @@
                                         <div class="usr-toggle-row">
                                             <span>Producto activo</span>
                                             <label class="usr-switch">
-                                                <input type="checkbox" name="activo" value="1" x-model="editProd.activo">
+                                                <input type="checkbox" name="estado" value="1" x-model="editProd.estado">
                                                 <span class="usr-switch-slider"></span>
                                             </label>
                                         </div>

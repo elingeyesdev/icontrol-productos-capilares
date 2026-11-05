@@ -34,7 +34,7 @@
                     'nombre|asc' => 'Nombre (A-Z)',
                     'nombre|desc' => 'Nombre (Z-A)',
                     'productos|desc' => 'Más productos primero',
-                    'activo|desc' => 'Estado',
+                    'estado|desc' => 'Estado',
                 ]" />
             </form>
             <button type="button" class="btn-add-user" @click="showCreate = true">
@@ -69,7 +69,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($cat->activo)
+                                    @if($cat->estado)
                                         <span class="estado-activo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Activo</span>
                                     @else
                                         <span class="estado-inactivo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Inactivo</span>
@@ -78,7 +78,7 @@
                                 <td>
                                     <div style="display:flex; gap:6px; justify-content:center;">
                                         <button type="button" class="btn-editar"
-                                                @click="editCat = { id: {{ $cat->id }}, nombre: '{{ addslashes($cat->nombre_categoria) }}', descripcion: '{{ addslashes($cat->descripcion ?? '') }}', activo: {{ $cat->activo ? 'true' : 'false' }} }">
+                                                @click="editCat = { id: {{ $cat->id }}, nombre: '{{ addslashes($cat->nombre_categoria) }}', descripcion: '{{ addslashes($cat->descripcion ?? '') }}', estado: {{ $cat->estado ? 'true' : 'false' }} }">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>
                                         <button type="button" class="btn-eliminar"
@@ -150,7 +150,7 @@
                                 <div class="usr-toggle-row">
                                     <span>Categoría activa</span>
                                     <label class="usr-switch">
-                                        <input type="checkbox" name="activo" value="1" x-model="editCat.activo">
+                                        <input type="checkbox" name="estado" value="1" x-model="editCat.estado">
                                         <span class="usr-switch-slider"></span>
                                     </label>
                                 </div>

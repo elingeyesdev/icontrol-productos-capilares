@@ -38,7 +38,7 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (! Auth::user()->activo) {
+        if (! Auth::user()->estado) {
             Auth::guard('web')->logout();
 
             throw ValidationException::withMessages([

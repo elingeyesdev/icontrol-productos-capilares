@@ -16,7 +16,7 @@ class CartController extends Controller
 
         $producto = Producto::findOrFail($data['id_producto']);
 
-        if (!$producto->activo || $producto->stock < 1) {
+        if (!$producto->estado || $producto->stock < 1) {
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Este producto no está disponible.'], 422);
             }

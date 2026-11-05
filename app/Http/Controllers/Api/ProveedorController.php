@@ -23,7 +23,7 @@ class ProveedorController extends Controller
     {
         $data = $this->validar($request);
 
-        $proveedor = Proveedor::create($data + ['activo' => $request->boolean('activo', true)]);
+        $proveedor = Proveedor::create($data + ['estado' => $request->boolean('estado', true)]);
 
         return response()->json($this->formato($proveedor->loadCount('compras')), 201);
     }
@@ -33,7 +33,7 @@ class ProveedorController extends Controller
         $data = $this->validar($request);
 
         $proveedor->update($data + [
-            'activo' => $request->has('activo') ? $request->boolean('activo') : $proveedor->activo,
+            'estado' => $request->has('estado') ? $request->boolean('estado') : $proveedor->estado,
         ]);
 
         return response()->json($this->formato($proveedor->loadCount('compras')));
@@ -60,7 +60,7 @@ class ProveedorController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         return [
@@ -81,7 +81,7 @@ class ProveedorController extends Controller
             'telefono' => $p->telefono,
             'email' => $p->email,
             'direccion' => $p->direccion,
-            'activo' => (bool) $p->activo,
+            'estado' => (bool) $p->estado,
             'compras_count' => (int) ($p->compras_count ?? 0),
         ];
     }

@@ -36,7 +36,7 @@
                 'name|asc' => 'Nombre (A-Z)',
                 'name|desc' => 'Nombre (Z-A)',
                 'email|asc' => 'Correo (A-Z)',
-                'activo|desc' => 'Estado',
+                'estado|desc' => 'Estado',
             ]" />
         </form>
 
@@ -92,7 +92,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($usuario->activo)
+                                    @if($usuario->estado)
                                         <span class="estado-activo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Activo</span>
                                     @else
                                         <span class="estado-inactivo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Inactivo</span>
@@ -106,7 +106,7 @@
                                                     name: '{{ $usuario->name }}',
                                                     email: '{{ $usuario->email }}',
                                                     telefono: {{ $usuario->telefono ? "'".addslashes($usuario->telefono)."'" : 'null' }},
-                                                    activo: {{ $usuario->activo ? 'true' : 'false' }},
+                                                    estado: {{ $usuario->estado ? 'true' : 'false' }},
                                                     role: '{{ $rolPrincipal }}',
                                                     rolClass: '{{ $rolClass }}',
                                                     preview: {{ $imgSrc ? "'".$imgSrc."'" : 'null' }},
@@ -185,9 +185,9 @@
 
                                     <div class="usr-card-badges usr-card-badges--stack">
                                         <span class="rol-badge" :class="editUser.rolClass" x-text="editUser.role ? editUser.role.charAt(0).toUpperCase() + editUser.role.slice(1) : ''"></span>
-                                        <span :class="editUser.activo ? 'estado-activo' : 'estado-inactivo'">
+                                        <span :class="editUser.estado ? 'estado-activo' : 'estado-inactivo'">
                                             <i class="bi bi-circle-fill" style="font-size:7px"></i>
-                                            <span x-text="editUser.activo ? 'Activo' : 'Inactivo'"></span>
+                                            <span x-text="editUser.estado ? 'Activo' : 'Inactivo'"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -212,7 +212,7 @@
                                     <div class="usr-toggle-row">
                                         <span>Cuenta activa</span>
                                         <label class="usr-switch">
-                                            <input type="checkbox" name="activo" value="1" x-model="editUser.activo">
+                                            <input type="checkbox" name="estado" value="1" x-model="editUser.estado">
                                             <span class="usr-switch-slider"></span>
                                         </label>
                                     </div>

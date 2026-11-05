@@ -17,7 +17,7 @@ class VentaController extends Controller
     public function index(Request $request)
     {
         $query = Venta::with(['cliente', 'vendedor', 'detalles.producto', 'pedido'])
-            ->where('estado', '!=', 'eliminada');
+            ->where('situacion', '!=', 'eliminada');
 
         if ($buscar = $request->get('buscar')) {
             $query->whereHas('cliente', fn ($q) => $q->where('name', 'like', "%{$buscar}%"));
@@ -29,7 +29,7 @@ class VentaController extends Controller
     public function clientes()
     {
         $clientes = User::whereHas('roles', fn ($q) => $q->where('name', 'cliente'))
-            ->where('activo', true)
+            ->where('estado', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
@@ -47,8 +47,8 @@ class VentaController extends Controller
                     'id_vendedor' => $request->user()->id,
                     'fecha' => now(),
                     'total' => 0,
-                    'estado' => 'completada',
-                    'activo' => true,
+                    'situacion' => 'completada',
+                    'estado' => true,
                 ]);
 
                 $venta->update(['total' => $this->registrarItems($venta, $data['items'], $request->user()->id)]);
@@ -64,7 +64,7 @@ class VentaController extends Controller
 
     public function update(Request $request, Venta $venta)
     {
-        if ($venta->estado !== 'completada') {
+        if ($venta->situacion !== 'completada') {
             return response()->json(['message' => 'Solo se pueden modificar ventas completadas.'], 422);
         }
 
@@ -93,13 +93,13 @@ class VentaController extends Controller
 
     public function destroy(Request $request, Venta $venta)
     {
-        if ($venta->estado === 'cancelada') {
+        if ($venta->situacion === 'cancelada') {
             return response()->json(['message' => 'Esta venta ya está cancelada.'], 422);
         }
 
         DB::transaction(function () use ($venta, $request) {
             $this->devolverStock($venta, $request->user()->id);
-            $venta->update(['estado' => 'cancelada', 'activo' => false]);
+            $venta->update(['situacion' => 'cancelada', 'estado' => false]);
         });
 
         return response()->json(['message' => "Venta #{$venta->id} cancelada y stock revertido correctamente."]);
@@ -107,16 +107,16 @@ class VentaController extends Controller
 
     public function eliminar(Request $request, Venta $venta)
     {
-        if ($venta->estado === 'eliminada') {
+        if ($venta->situacion === 'eliminada') {
             return response()->json(['message' => 'Esta venta ya fue eliminada.'], 422);
         }
 
         DB::transaction(function () use ($venta, $request) {
-            if ($venta->estado === 'completada') {
+            if ($venta->situacion === 'completada') {
                 $this->devolverStock($venta, $request->user()->id);
             }
 
-            $venta->update(['estado' => 'eliminada', 'activo' => false]);
+            $venta->update(['situacion' => 'eliminada', 'estado' => false]);
         });
 
         return response()->json(['message' => "Venta #{$venta->id} eliminada correctamente."]);
@@ -160,7 +160,7 @@ class VentaController extends Controller
                 'cantidad' => $item['cantidad'],
                 'id_usuario' => $idUsuario,
                 'fecha' => now(),
-                'activo' => true,
+                'estado' => true,
             ]);
 
             $producto->decrement('stock', $item['cantidad']);
@@ -186,7 +186,7 @@ class VentaController extends Controller
                 'cantidad' => $detalle->cantidad,
                 'id_usuario' => $idUsuario,
                 'fecha' => now(),
-                'activo' => true,
+                'estado' => true,
             ]);
         }
     }
@@ -196,7 +196,7 @@ class VentaController extends Controller
         return [
             'id' => $v->id,
             'fecha' => $v->fecha->format('Y-m-d H:i:s'),
-            'estado' => $v->estado,
+            'situacion' => $v->situacion,
             'total' => (float) $v->total,
             'id_cliente' => $v->id_cliente,
             'cliente' => $v->cliente->name ?? '—',

@@ -32,7 +32,7 @@ class UserController extends Controller
             'name' => 'name',
             'email' => 'email',
             'telefono' => 'telefono',
-            'activo' => 'activo',
+            'estado' => 'estado',
         ], 'id', 'desc');
 
         $usuarios = $query->get();
@@ -54,7 +54,7 @@ class UserController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ]);
@@ -63,14 +63,14 @@ class UserController extends Controller
             return back()->with('error', 'No puedes quitarte tu propio rol de administrador.');
         }
 
-        if ($user->id === auth()->id() && empty($data['activo'])) {
+        if ($user->id === auth()->id() && empty($data['estado'])) {
             return back()->with('error', 'No puedes desactivar tu propia cuenta.');
         }
 
         $user->name = $data['name'];
         $user->telefono = $data['telefono'] ?? null;
         $user->email = $data['email'];
-        $user->activo = $request->boolean('activo');
+        $user->estado = $request->boolean('estado');
 
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -108,7 +108,7 @@ class UserController extends Controller
             return back()->with('error', 'No puedes eliminar tu propia cuenta desde aquí.');
         }
 
-        $user->activo = false;
+        $user->estado = false;
         $user->save();
 
         return back()->with('status', "Usuario \"{$user->name}\" desactivado correctamente.");

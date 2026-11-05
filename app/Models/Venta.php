@@ -19,14 +19,14 @@ class Venta extends Model
         'id_vendedor',
         'fecha',
         'total',
+        'situacion',
         'estado',
-        'activo',
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
         'total' => 'decimal:2',
-        'activo' => 'boolean',
+        'estado' => 'boolean',
     ];
 
     public function cliente(): BelongsTo

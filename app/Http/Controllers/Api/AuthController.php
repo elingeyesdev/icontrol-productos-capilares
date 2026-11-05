@@ -34,7 +34,7 @@ class AuthController extends Controller
                 'email' => Str::lower($data['email']),
                 'password' => Hash::make($data['password']),
                 'telefono' => $data['telefono'] ?? null,
-                'activo' => true,
+                'estado' => true,
             ]);
 
             $rol = Role::firstOrCreate(['name' => 'cliente', 'guard_name' => 'web']);
@@ -79,7 +79,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! $user->activo) {
+        if (! $user->estado) {
             throw ValidationException::withMessages([
                 'email' => ['Tu cuenta está desactivada. Contacta al administrador.'],
             ])->status(403);

@@ -21,13 +21,13 @@ class ReporteController extends Controller
         $desde = now()->startOfMonth();
         $hasta = now()->endOfMonth();
 
-        $totalVentas = Venta::where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
-        $totalCompras = Compra::where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
-        $productosStockBajo = Producto::where('activo', true)->where('stock', '<=', 10)->count();
+        $totalVentas = Venta::where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
+        $totalCompras = Compra::where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
+        $productosStockBajo = Producto::where('estado', true)->where('stock', '<=', 10)->count();
         $productoTop = DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.id_venta')
             ->join('productos', 'productos.id', '=', 'detalle_ventas.id_producto')
-            ->where('ventas.estado', 'completada')
+            ->where('ventas.situacion', 'completada')
             ->whereBetween('ventas.fecha', [$desde, $hasta])
             ->selectRaw('productos.nombre_producto, SUM(detalle_ventas.cantidad) as total_cantidad')
             ->groupBy('productos.id', 'productos.nombre_producto')
@@ -42,7 +42,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($request);
 
         $query = Venta::with(['cliente', 'vendedor'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idCliente = $request->get('id_cliente')) {
@@ -61,7 +61,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($request);
 
         $query = Venta::with(['cliente', 'vendedor'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idCliente = $request->get('id_cliente')) {
@@ -81,7 +81,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($request);
 
         $query = Compra::with(['proveedor', 'usuario'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idProveedor = $request->get('id_proveedor')) {
@@ -90,7 +90,7 @@ class ReporteController extends Controller
 
         $compras = $query->orderByDesc('fecha')->get();
         $totalCompras = $compras->sum('total');
-        $proveedores = \App\Models\Proveedor::where('activo', true)->orderBy('nombre_empresa')->get();
+        $proveedores = \App\Models\Proveedor::where('estado', true)->orderBy('nombre_empresa')->get();
 
         return view('reportes.compras', compact('compras', 'totalCompras', 'proveedores', 'desde', 'hasta'));
     }
@@ -100,7 +100,7 @@ class ReporteController extends Controller
         [$desde, $hasta] = $this->rangoFechas($request);
 
         $query = Compra::with(['proveedor', 'usuario'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idProveedor = $request->get('id_proveedor')) {
@@ -163,7 +163,7 @@ class ReporteController extends Controller
 
         $detalles = $this->consultaPreciosProveedor($request, $desde, $hasta);
         $productos = Producto::orderBy('nombre_producto')->get();
-        $proveedores = \App\Models\Proveedor::where('activo', true)->orderBy('nombre_empresa')->get();
+        $proveedores = \App\Models\Proveedor::where('estado', true)->orderBy('nombre_empresa')->get();
 
         return view('reportes.precios-proveedor', compact('detalles', 'productos', 'proveedores', 'desde', 'hasta'));
     }
@@ -183,7 +183,7 @@ class ReporteController extends Controller
     {
         $query = DetalleCompra::with(['producto', 'compra.proveedor'])
             ->whereHas('compra', function ($q) use ($desde, $hasta) {
-                $q->where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta]);
+                $q->where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta]);
             });
 
         if ($idProducto = $request->get('id_producto')) {
@@ -247,7 +247,7 @@ class ReporteController extends Controller
     {
         $query = MovimientoStock::with(['producto', 'usuario'])
             ->join('productos', 'productos.id', '=', 'movimientos_stock.id_producto')
-            ->where('movimientos_stock.activo', true)
+            ->where('movimientos_stock.estado', true)
             ->select('movimientos_stock.*');
 
         if ($tipo) {
@@ -275,7 +275,7 @@ class ReporteController extends Controller
         return DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.id_venta')
             ->join('productos', 'productos.id', '=', 'detalle_ventas.id_producto')
-            ->where('ventas.estado', 'completada')
+            ->where('ventas.situacion', 'completada')
             ->whereBetween('ventas.fecha', [$desde, $hasta])
             ->selectRaw('productos.id, productos.nombre_producto, productos.imagen_producto, SUM(detalle_ventas.cantidad) as total_cantidad, SUM(detalle_ventas.subtotal) as total_ingresos')
             ->groupBy('productos.id', 'productos.nombre_producto', 'productos.imagen_producto')

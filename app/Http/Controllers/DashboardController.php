@@ -12,25 +12,25 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $ventasMes = Venta::where('estado', 'completada')
+        $ventasMes = Venta::where('situacion', 'completada')
             ->whereMonth('fecha', now()->month)
             ->whereYear('fecha', now()->year);
 
-        $comprasMes = Compra::where('estado', 'completada')
+        $comprasMes = Compra::where('situacion', 'completada')
             ->whereMonth('fecha', now()->month)
             ->whereYear('fecha', now()->year);
 
         $stats = [
-            'productos_activos' => Producto::where('activo', true)->count(),
-            'usuarios_activos' => User::where('activo', true)->count(),
+            'productos_activos' => Producto::where('estado', true)->count(),
+            'usuarios_activos' => User::where('estado', true)->count(),
             'ventas_mes_total' => (clone $ventasMes)->sum('total'),
             'ventas_mes_count' => (clone $ventasMes)->count(),
             'compras_mes_total' => (clone $comprasMes)->sum('total'),
             'compras_mes_count' => (clone $comprasMes)->count(),
-            'pedidos_pendientes' => Pedido::where('estado', 'pendiente')->count(),
+            'pedidos_pendientes' => Pedido::where('situacion', 'pendiente')->count(),
         ];
 
-        $stockProductos = Producto::where('activo', true)
+        $stockProductos = Producto::where('estado', true)
             ->orderBy('stock')
             ->take(6)
             ->get();
@@ -41,7 +41,7 @@ class DashboardController extends Controller
             ->get();
 
         $ultimasVentas = Venta::with('cliente')
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->orderByDesc('fecha')
             ->take(6)
             ->get();

@@ -18,16 +18,16 @@ class Pedido extends Model
         'id_venta',
         'fecha',
         'total',
-        'estado',
+        'situacion',
         'direccion_entrega',
         'nota',
-        'activo',
+        'estado',
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
         'total' => 'decimal:2',
-        'activo' => 'boolean',
+        'estado' => 'boolean',
     ];
 
     public function cliente(): BelongsTo

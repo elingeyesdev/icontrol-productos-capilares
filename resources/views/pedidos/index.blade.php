@@ -86,7 +86,7 @@
                     'total|asc' => 'Total: menor a mayor',
                     'cliente|asc' => 'Cliente (A-Z)',
                     'cliente|desc' => 'Cliente (Z-A)',
-                    'estado|asc' => 'Estado',
+                    'situacion|asc' => 'Situación',
                 ]" />
             </form>
             <button type="button" class="btn-add-user" @click="editingId = null; showCreate = true;">
@@ -106,7 +106,7 @@
                             <th>Productos</th>
                             <th>Total</th>
                             <th>Fecha</th>
-                            <th style="text-align:center;">Estado</th>
+                            <th style="text-align:center;">Situación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -119,12 +119,12 @@
                                 <td>Bs. {{ number_format($pedido->total, 2) }}</td>
                                 <td>{{ $pedido->fecha->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <span class="{{ match($pedido->estado) {
+                                    <span class="{{ match($pedido->situacion) {
                                         'entregado' => 'estado-activo',
                                         'cancelado' => 'estado-inactivo',
                                         default => 'rol-badge rol-default',
                                     } }}">
-                                        {{ ucfirst($pedido->estado) }}
+                                        {{ ucfirst($pedido->situacion) }}
                                     </span>
                                 </td>
                                 <td>
@@ -140,25 +140,25 @@
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
 
-                                        @if(in_array($pedido->estado, ['pendiente', 'confirmado']))
+                                        @if(in_array($pedido->situacion, ['pendiente', 'confirmado']))
                                             <button type="button" class="btn-editar" title="Confirmar pedido" style="background:rgba(90,180,120,.15); color:#2e7d4f;"
                                                     @click="confirmarPedido = { id: {{ $pedido->id }}, cliente: '{{ addslashes($pedido->cliente->name ?? '—') }}', total: {{ $pedido->total }} }">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                         @endif
 
-                                        @if(in_array($pedido->estado, ['pendiente', 'confirmado']))
+                                        @if(in_array($pedido->situacion, ['pendiente', 'confirmado']))
                                             <form method="POST" action="{{ route('pedidos.estado', $pedido) }}"
                                                   onsubmit="return confirm('¿Cancelar este pedido? El stock se revertirá.');">
                                                 @csrf @method('PUT')
-                                                <input type="hidden" name="estado" value="cancelado">
+                                                <input type="hidden" name="situacion" value="cancelado">
                                                 <button type="submit" class="btn-eliminar" title="Cancelar pedido">
                                                     <i class="bi bi-x-circle-fill"></i>
                                                 </button>
                                             </form>
                                         @endif
 
-                                        @if(in_array($pedido->estado, ['pendiente', 'confirmado']))
+                                        @if(in_array($pedido->situacion, ['pendiente', 'confirmado']))
                                             <button type="button" class="btn-editar" title="Editar pedido"
                                                     @click="editarPedido({
                                                         id: {{ $pedido->id }},
@@ -335,7 +335,7 @@
                             <form :action="confirmarPedido ? '{{ url('pedidos') }}/' + confirmarPedido.id + '/estado' : ''" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <input type="hidden" name="estado" value="entregado">
+                                <input type="hidden" name="situacion" value="entregado">
                                 <div class="usr-modal-footer">
                                     <button type="button" class="usr-btn-cancel" @click="confirmarPedido = null">Volver</button>
                                     <button type="submit" class="usr-btn-submit"><i class="bi bi-check-lg"></i> Confirmar</button>

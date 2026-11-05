@@ -18,11 +18,11 @@ class MovimientoStock extends Model
         'cantidad',
         'id_usuario',
         'fecha',
-        'activo',
+        'estado',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'estado' => 'boolean',
         'fecha' => 'datetime',
     ];
 

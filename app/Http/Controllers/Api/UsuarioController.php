@@ -33,12 +33,12 @@ class UsuarioController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'password' => ['nullable', 'string', 'min:8'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ]);
 
-        $activo = $request->has('activo') ? $request->boolean('activo') : $user->activo;
+        $activo = $request->has('estado') ? $request->boolean('estado') : $user->estado;
         $propio = $user->id === $request->user()->id;
 
         if ($propio && $user->hasRole('administrador') && $data['role'] !== 'administrador') {
@@ -52,7 +52,7 @@ class UsuarioController extends Controller
         $user->name = $data['name'];
         $user->telefono = $data['telefono'] ?? null;
         $user->email = $data['email'];
-        $user->activo = $activo;
+        $user->estado = $activo;
 
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -74,7 +74,7 @@ class UsuarioController extends Controller
             return response()->json(['message' => 'No puedes eliminar tu propia cuenta desde aquí.'], 422);
         }
 
-        $user->activo = false;
+        $user->estado = false;
         $user->save();
         $user->tokens()->delete();
 
@@ -140,7 +140,7 @@ class UsuarioController extends Controller
             'name' => $u->name,
             'email' => $u->email,
             'telefono' => $u->telefono,
-            'activo' => (bool) $u->activo,
+            'estado' => (bool) $u->estado,
             'rol' => $u->roles->first()?->name,
             'foto' => Imagen::url($u->imagen_usuario),
         ];

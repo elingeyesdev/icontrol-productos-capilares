@@ -66,7 +66,7 @@ class StockController extends Controller
                 'cantidad' => $data['cantidad'],
                 'id_usuario' => $request->user()->id,
                 'fecha' => now(),
-                'activo' => true,
+                'estado' => true,
             ]);
 
             $producto->stock = $data['tipo'] === 'entrada'

@@ -15,9 +15,11 @@ class HistorialPrecioProducto extends Model
         'precio_nuevo',
         'id_usuario',
         'fecha',
+        'estado',
     ];
 
     protected $casts = [
+        'estado' => 'boolean',
         'precio_anterior' => 'decimal:2',
         'precio_nuevo' => 'decimal:2',
         'fecha' => 'datetime',

@@ -15,7 +15,7 @@ class ProductoController extends Controller
 
     public function index(Request $request)
     {
-        $query = Producto::with('categoria')->where('activo', true);
+        $query = Producto::with('categoria')->where('estado', true);
 
         if ($idCategoria = $request->get('id_categoria')) {
             $query->where('id_categoria', $idCategoria);
@@ -32,7 +32,7 @@ class ProductoController extends Controller
 
     public function show(Producto $producto)
     {
-        if (! $producto->activo) {
+        if (! $producto->estado) {
             return response()->json(['message' => 'Producto no disponible.'], 404);
         }
 
@@ -54,9 +54,9 @@ class ProductoController extends Controller
         }
 
         if ($request->get('estado') === 'activo') {
-            $query->where('activo', true);
+            $query->where('estado', true);
         } elseif ($request->get('estado') === 'inactivo') {
-            $query->where('activo', false);
+            $query->where('estado', false);
         }
 
         $productos = $query->orderBy('nombre_producto')->get();
@@ -73,14 +73,14 @@ class ProductoController extends Controller
             'stock' => ['required', 'integer', 'min:0'],
             'id_categoria' => ['required', 'exists:categorias,id'],
             'imagen_producto' => ['nullable', 'image', 'max:2048'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         if ($request->hasFile('imagen_producto')) {
             $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         }
 
-        $data['activo'] = $request->boolean('activo', true);
+        $data['estado'] = $request->boolean('estado', true);
 
         $producto = DB::transaction(function () use ($data, $request) {
             $producto = Producto::create($data);
@@ -92,7 +92,7 @@ class ProductoController extends Controller
                     'cantidad' => $producto->stock,
                     'id_usuario' => $request->user()->id,
                     'fecha' => now(),
-                    'activo' => true,
+                    'estado' => true,
                 ]);
             }
 
@@ -110,7 +110,7 @@ class ProductoController extends Controller
             'precio' => ['required', 'numeric', 'min:0.01'],
             'id_categoria' => ['required', 'exists:categorias,id'],
             'imagen_producto' => ['nullable', 'image', 'max:2048'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         if ($request->hasFile('imagen_producto')) {
@@ -119,10 +119,10 @@ class ProductoController extends Controller
             unset($data['imagen_producto']);
         }
 
-        if ($request->has('activo')) {
-            $data['activo'] = $request->boolean('activo');
+        if ($request->has('estado')) {
+            $data['estado'] = $request->boolean('estado');
         } else {
-            unset($data['activo']);
+            unset($data['estado']);
         }
 
         $precioAnterior = (float) $producto->precio;
@@ -147,7 +147,7 @@ class ProductoController extends Controller
 
     public function destroy(Producto $producto)
     {
-        $producto->update(['activo' => false]);
+        $producto->update(['estado' => false]);
 
         return response()->json(['message' => 'Producto desactivado correctamente.']);
     }
@@ -162,7 +162,7 @@ class ProductoController extends Controller
             'stock' => $p->stock,
             'categoria' => $p->categoria?->nombre_categoria,
             'id_categoria' => $p->id_categoria,
-            'activo' => (bool) $p->activo,
+            'estado' => (bool) $p->estado,
             'imagen' => Imagen::url($p->imagen_producto),
         ];
     }

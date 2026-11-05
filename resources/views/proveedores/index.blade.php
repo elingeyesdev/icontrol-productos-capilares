@@ -34,7 +34,7 @@
                     'nombre|asc' => 'Nombre (A-Z)',
                     'nombre|desc' => 'Nombre (Z-A)',
                     'compras|desc' => 'Más compras primero',
-                    'activo|desc' => 'Estado',
+                    'estado|desc' => 'Estado',
                 ]" />
             </form>
             <button type="button" class="btn-add-user" @click="showCreate = true">
@@ -73,7 +73,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @if($prov->activo)
+                                    @if($prov->estado)
                                         <span class="estado-activo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Activo</span>
                                     @else
                                         <span class="estado-inactivo"><i class="bi bi-circle-fill" style="font-size:7px"></i> Inactivo</span>
@@ -89,7 +89,7 @@
                                                     telefono: '{{ addslashes($prov->telefono ?? '') }}',
                                                     email: '{{ addslashes($prov->email ?? '') }}',
                                                     direccion: '{{ addslashes($prov->direccion ?? '') }}',
-                                                    activo: {{ $prov->activo ? 'true' : 'false' }}
+                                                    estado: {{ $prov->estado ? 'true' : 'false' }}
                                                 }">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>
@@ -192,7 +192,7 @@
                                 <div class="usr-toggle-row">
                                     <span>Proveedor activo</span>
                                     <label class="usr-switch">
-                                        <input type="checkbox" name="activo" value="1" x-model="editProv.activo">
+                                        <input type="checkbox" name="estado" value="1" x-model="editProv.estado">
                                         <span class="usr-switch-slider"></span>
                                     </label>
                                 </div>

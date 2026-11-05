@@ -19,7 +19,7 @@
                             <th>Productos</th>
                             <th>Total</th>
                             <th>Fecha</th>
-                            <th>Estado</th>
+                            <th>Situación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -31,12 +31,12 @@
                                 <td>Bs. {{ number_format($pedido->total, 2) }}</td>
                                 <td>{{ $pedido->fecha->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <span class="{{ match($pedido->estado) {
+                                    <span class="{{ match($pedido->situacion) {
                                         'entregado' => 'estado-activo',
                                         'cancelado' => 'estado-inactivo',
                                         default => 'rol-badge rol-default',
                                     } }}">
-                                        {{ ucfirst($pedido->estado) }}
+                                        {{ ucfirst($pedido->situacion) }}
                                     </span>
                                 </td>
                                 <td>

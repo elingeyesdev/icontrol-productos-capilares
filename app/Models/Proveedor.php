@@ -18,11 +18,11 @@ class Proveedor extends Model
         'telefono',
         'email',
         'direccion',
-        'activo',
+        'estado',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'estado' => 'boolean',
     ];
 
     public function compras(): HasMany

@@ -18,9 +18,11 @@ class DetallePedido extends Model
         'cantidad',
         'precio_unitario',
         'subtotal',
+        'estado',
     ];
 
     protected $casts = [
+        'estado' => 'boolean',
         'precio_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];

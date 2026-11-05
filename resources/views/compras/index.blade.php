@@ -88,7 +88,7 @@
                     'proveedor|asc' => 'Proveedor (A-Z)',
                     'proveedor|desc' => 'Proveedor (Z-A)',
                     'usuario|asc' => 'Registrado por',
-                    'estado|asc' => 'Estado',
+                    'situacion|asc' => 'Situación',
                 ]" />
             </form>
             <button type="button" class="btn-add-user" @click="editingId = null; showCreate = true;">
@@ -109,7 +109,7 @@
                             <th>Productos</th>
                             <th>Total</th>
                             <th>Fecha</th>
-                            <th style="text-align:center;">Estado</th>
+                            <th style="text-align:center;">Situación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -123,8 +123,8 @@
                                 <td>Bs. {{ number_format($compra->total, 2) }}</td>
                                 <td>{{ $compra->fecha->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <span class="{{ $compra->estado === 'completada' ? 'estado-activo' : 'estado-inactivo' }}">
-                                        {{ ucfirst($compra->estado) }}
+                                    <span class="{{ $compra->situacion === 'completada' ? 'estado-activo' : 'estado-inactivo' }}">
+                                        {{ ucfirst($compra->situacion) }}
                                     </span>
                                 </td>
                                 <td>
@@ -140,7 +140,7 @@
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
-                                        @if($compra->estado === 'completada')
+                                        @if($compra->situacion === 'completada')
                                             <button type="button" class="btn-editar" title="Editar compra"
                                                     @click="editarCompra({
                                                         id: {{ $compra->id }},

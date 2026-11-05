@@ -13,7 +13,7 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        if ($user && ! $user->activo) {
+        if ($user && ! $user->estado) {
             $user->tokens()->delete();
 
             if ($request->expectsJson() || $request->is('api/*')) {

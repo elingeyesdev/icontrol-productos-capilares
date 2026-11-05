@@ -54,7 +54,7 @@
 
             <div class="bg-brand-white rounded-2xl shadow-card overflow-hidden">
                 <div class="px-5 py-3.5 font-extrabold text-[13.5px] text-brand-text border-b border-brand-sidebar flex items-center gap-2">
-                    <i class="bi bi-bag-check" style="color:var(--clr-accent);"></i> Pedidos por estado
+                    <i class="bi bi-bag-check" style="color:var(--clr-accent);"></i> Pedidos por situación
                 </div>
                 <div class="p-5 flex items-center gap-5">
                     <div style="width:150px; height:150px; flex-shrink:0;">
@@ -76,7 +76,7 @@
 
             <div class="bg-brand-white rounded-2xl shadow-card overflow-hidden">
                 <div class="px-5 py-3.5 font-extrabold text-[13.5px] text-brand-text border-b border-brand-sidebar flex items-center gap-2">
-                    <i class="bi bi-receipt" style="color:var(--clr-accent);"></i> Ventas por estado
+                    <i class="bi bi-receipt" style="color:var(--clr-accent);"></i> Ventas por situación
                 </div>
                 <div class="p-5 flex items-center gap-5">
                     <div style="width:150px; height:150px; flex-shrink:0;">
@@ -135,11 +135,11 @@
                                     <div class="text-[13px] font-bold text-brand-text">#{{ $pedido->id }} — {{ $pedido->cliente->name ?? '—' }}</div>
                                     <div class="text-[11.5px] text-brand-sub">{{ $pedido->fecha->format('d/m/Y H:i') }}</div>
                                 </div>
-                                <span class="{{ match($pedido->estado) {
+                                <span class="{{ match($pedido->situacion) {
                                     'completado' => 'estado-activo',
                                     'cancelado' => 'estado-inactivo',
                                     default => 'rol-badge rol-default',
-                                } }}">{{ ucfirst($pedido->estado) }}</span>
+                                } }}">{{ ucfirst($pedido->situacion) }}</span>
                             </div>
                         @endforeach
                     </div>

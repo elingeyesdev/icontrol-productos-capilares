@@ -19,7 +19,7 @@ class PedidoController extends Controller
     {
         $pedidos = Pedido::with('detalles.producto')
             ->where('id_cliente', $request->user()->id)
-            ->where('estado', '!=', 'eliminado')
+            ->where('situacion', '!=', 'eliminado')
             ->orderByDesc('fecha')
             ->get();
 
@@ -29,7 +29,7 @@ class PedidoController extends Controller
     public function indexTodos()
     {
         $pedidos = Pedido::with(['detalles.producto', 'cliente'])
-            ->where('estado', '!=', 'eliminado')
+            ->where('situacion', '!=', 'eliminado')
             ->orderByDesc('fecha')
             ->get();
 
@@ -83,7 +83,7 @@ class PedidoController extends Controller
                 foreach ($items as $item) {
                     $producto = $productos->get($item['id_producto']);
 
-                    if (! $producto || ! $producto->activo) {
+                    if (! $producto || ! $producto->estado) {
                         throw new DomainException('Uno de los productos ya no está disponible.');
                     }
 
@@ -101,10 +101,10 @@ class PedidoController extends Controller
                     'id_cliente' => $request->user()->id,
                     'fecha' => now(),
                     'total' => 0,
-                    'estado' => 'pendiente',
+                    'situacion' => 'pendiente',
                     'direccion_entrega' => $data['direccion_entrega'] ?? null,
                     'nota' => $data['nota'] ?? null,
-                    'activo' => true,
+                    'estado' => true,
                 ]);
 
                 $total = 0;
@@ -130,7 +130,7 @@ class PedidoController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => $request->user()->id,
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
                 }
 
@@ -152,7 +152,7 @@ class PedidoController extends Controller
         return [
             'id' => $pedido->id,
             'fecha' => $pedido->fecha->format('Y-m-d H:i:s'),
-            'estado' => $pedido->estado,
+            'situacion' => $pedido->situacion,
             'total' => (float) $pedido->total,
             'items' => $pedido->detalles->map(fn ($d) => [
                 'producto' => $d->producto->nombre_producto ?? 'Producto eliminado',

@@ -11,7 +11,7 @@ class CategoriaController extends Controller
 
     public function index()
     {
-        $categorias = Categoria::where('activo', true)
+        $categorias = Categoria::where('estado', true)
             ->orderBy('nombre_categoria')
             ->get(['id', 'nombre_categoria', 'descripcion']);
 
@@ -34,13 +34,13 @@ class CategoriaController extends Controller
         $data = $request->validate([
             'nombre_categoria' => ['required', 'string', 'max:100', 'unique:categorias,nombre_categoria'],
             'descripcion' => ['nullable', 'string'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         $categoria = Categoria::create([
             'nombre_categoria' => $data['nombre_categoria'],
             'descripcion' => $data['descripcion'] ?? null,
-            'activo' => $request->boolean('activo', true),
+            'estado' => $request->boolean('estado', true),
         ]);
 
         return response()->json($this->formato($categoria->loadCount('productos')), 201);
@@ -51,13 +51,13 @@ class CategoriaController extends Controller
         $data = $request->validate([
             'nombre_categoria' => ['required', 'string', 'max:100', 'unique:categorias,nombre_categoria,'.$categoria->id],
             'descripcion' => ['nullable', 'string'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         $categoria->update([
             'nombre_categoria' => $data['nombre_categoria'],
             'descripcion' => $data['descripcion'] ?? null,
-            'activo' => $request->has('activo') ? $request->boolean('activo') : $categoria->activo,
+            'estado' => $request->has('estado') ? $request->boolean('estado') : $categoria->estado,
         ]);
 
         return response()->json($this->formato($categoria->loadCount('productos')));
@@ -82,7 +82,7 @@ class CategoriaController extends Controller
             'id' => $c->id,
             'nombre_categoria' => $c->nombre_categoria,
             'descripcion' => $c->descripcion,
-            'activo' => (bool) $c->activo,
+            'estado' => (bool) $c->estado,
             'productos_count' => (int) ($c->productos_count ?? 0),
         ];
     }

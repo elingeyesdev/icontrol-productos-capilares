@@ -18,14 +18,14 @@ class Compra extends Model
         'id_usuario',
         'fecha',
         'total',
+        'situacion',
         'estado',
-        'activo',
     ];
 
     protected $casts = [
         'fecha' => 'datetime',
         'total' => 'decimal:2',
-        'activo' => 'boolean',
+        'estado' => 'boolean',
     ];
 
     public function proveedor(): BelongsTo

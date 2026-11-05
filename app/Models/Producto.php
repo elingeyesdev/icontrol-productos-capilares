@@ -19,11 +19,11 @@ class Producto extends Model
         'stock',
         'id_categoria',
         'imagen_producto',
-        'activo',
+        'estado',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'estado' => 'boolean',
         'precio' => 'decimal:2',
     ];
 

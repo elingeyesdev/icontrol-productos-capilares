@@ -86,7 +86,7 @@
                     'total|asc' => 'Total: menor a mayor',
                     'cliente|asc' => 'Cliente (A-Z)',
                     'cliente|desc' => 'Cliente (Z-A)',
-                    'estado|asc' => 'Estado',
+                    'situacion|asc' => 'Situación',
                 ]" />
             </form>
             <button type="button" class="btn-add-user" @click="editingId = null; showCreate = true;">
@@ -107,7 +107,7 @@
                             <th>Productos</th>
                             <th>Total</th>
                             <th>Fecha</th>
-                            <th style="text-align:center;">Estado</th>
+                            <th style="text-align:center;">Situación</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -121,8 +121,8 @@
                                 <td>Bs. {{ number_format($venta->total, 2) }}</td>
                                 <td>{{ $venta->fecha->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    <span class="{{ $venta->estado === 'completada' ? 'estado-activo' : 'estado-inactivo' }}">
-                                        {{ ucfirst($venta->estado) }}
+                                    <span class="{{ $venta->situacion === 'completada' ? 'estado-activo' : 'estado-inactivo' }}">
+                                        {{ ucfirst($venta->situacion) }}
                                     </span>
                                     <br>
                                     @if($venta->esManual())
@@ -148,7 +148,7 @@
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
-                                        @if($venta->estado === 'completada' && $venta->esManual())
+                                        @if($venta->situacion === 'completada' && $venta->esManual())
                                             <button type="button" class="btn-editar" title="Editar venta"
                                                     @click="editarVenta({
                                                         id: {{ $venta->id }},
@@ -161,7 +161,7 @@
                                                     @click="deleteVenta = { id: {{ $venta->id }}, cliente: '{{ addslashes($venta->cliente->name ?? '—') }}' }">
                                                 <i class="bi bi-x-circle-fill"></i>
                                             </button>
-                                        @elseif($venta->estado === 'completada')
+                                        @elseif($venta->situacion === 'completada')
                                             <span class="venta-bloqueada" title="No se puede modificar: proviene de un pedido confirmado">
                                                 <i class="bi bi-lock-fill"></i>
                                             </span>

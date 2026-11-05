@@ -3,9 +3,9 @@
     @php
         $filtro = request('cat', 'Todos');
         $busqueda = request('q');
-        $categorias = \App\Models\Categoria::where('activo', true)->orderBy('nombre_categoria')->get();
+        $categorias = \App\Models\Categoria::where('estado', true)->orderBy('nombre_categoria')->get();
 
-        $query = \App\Models\Producto::with('categoria')->where('activo', true);
+        $query = \App\Models\Producto::with('categoria')->where('estado', true);
         if ($filtro !== 'Todos') {
             $query->whereHas('categoria', fn($q) => $q->where('nombre_categoria', $filtro));
         }

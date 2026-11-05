@@ -34,7 +34,7 @@
             </button>
 
             @hasanyrole('administrador|vendedor')
-            @php $pedidosPendientes = \App\Models\Pedido::with('cliente')->where('estado', 'pendiente')->latest('fecha')->take(5)->get(); @endphp
+            @php $pedidosPendientes = \App\Models\Pedido::with('cliente')->where('situacion', 'pendiente')->latest('fecha')->take(5)->get(); @endphp
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" type="button"
                         class="w-[38px] h-[38px] rounded-[10px] bg-white/25 hover:bg-white/50 flex items-center justify-center text-lg text-[#3a2450] relative transition-colors"

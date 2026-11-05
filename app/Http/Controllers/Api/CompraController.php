@@ -15,7 +15,7 @@ class CompraController extends Controller
     public function index(Request $request)
     {
         $query = Compra::with(['proveedor', 'usuario', 'detalles.producto'])
-            ->where('estado', '!=', 'eliminada');
+            ->where('situacion', '!=', 'eliminada');
 
         if ($buscar = $request->get('buscar')) {
             $query->whereHas('proveedor', fn ($q) => $q->where('nombre_empresa', 'like', "%{$buscar}%"));
@@ -34,8 +34,8 @@ class CompraController extends Controller
                 'id_usuario' => $request->user()->id,
                 'fecha' => now(),
                 'total' => 0,
-                'estado' => 'completada',
-                'activo' => true,
+                'situacion' => 'completada',
+                'estado' => true,
             ]);
 
             $compra->update(['total' => $this->registrarItems($compra, $data['items'], $request->user()->id)]);
@@ -48,7 +48,7 @@ class CompraController extends Controller
 
     public function update(Request $request, Compra $compra)
     {
-        if ($compra->estado !== 'completada') {
+        if ($compra->situacion !== 'completada') {
             return response()->json(['message' => 'Solo se pueden modificar compras completadas.'], 422);
         }
 
@@ -69,13 +69,13 @@ class CompraController extends Controller
 
     public function destroy(Request $request, Compra $compra)
     {
-        if ($compra->estado === 'cancelada') {
+        if ($compra->situacion === 'cancelada') {
             return response()->json(['message' => 'Esta compra ya está cancelada.'], 422);
         }
 
         DB::transaction(function () use ($compra, $request) {
             $this->revertirStock($compra, $request->user()->id);
-            $compra->update(['estado' => 'cancelada', 'activo' => false]);
+            $compra->update(['situacion' => 'cancelada', 'estado' => false]);
         });
 
         return response()->json(['message' => "Compra #{$compra->id} cancelada y stock revertido correctamente."]);
@@ -83,16 +83,16 @@ class CompraController extends Controller
 
     public function eliminar(Request $request, Compra $compra)
     {
-        if ($compra->estado === 'eliminada') {
+        if ($compra->situacion === 'eliminada') {
             return response()->json(['message' => 'Esta compra ya fue eliminada.'], 422);
         }
 
         DB::transaction(function () use ($compra, $request) {
-            if ($compra->estado === 'completada') {
+            if ($compra->situacion === 'completada') {
                 $this->revertirStock($compra, $request->user()->id);
             }
 
-            $compra->update(['estado' => 'eliminada', 'activo' => false]);
+            $compra->update(['situacion' => 'eliminada', 'estado' => false]);
         });
 
         return response()->json(['message' => "Compra #{$compra->id} eliminada correctamente."]);
@@ -132,7 +132,7 @@ class CompraController extends Controller
                 'cantidad' => $item['cantidad'],
                 'id_usuario' => $idUsuario,
                 'fecha' => now(),
-                'activo' => true,
+                'estado' => true,
             ]);
 
             $producto->increment('stock', $item['cantidad']);
@@ -161,7 +161,7 @@ class CompraController extends Controller
                     'cantidad' => $revertido,
                     'id_usuario' => $idUsuario,
                     'fecha' => now(),
-                    'activo' => true,
+                    'estado' => true,
                 ]);
             }
         }
@@ -172,7 +172,7 @@ class CompraController extends Controller
         return [
             'id' => $c->id,
             'fecha' => $c->fecha->format('Y-m-d H:i:s'),
-            'estado' => $c->estado,
+            'situacion' => $c->situacion,
             'total' => (float) $c->total,
             'id_proveedor' => $c->id_proveedor,
             'proveedor' => $c->proveedor->nombre_empresa ?? '—',

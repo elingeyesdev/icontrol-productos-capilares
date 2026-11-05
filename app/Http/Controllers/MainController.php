@@ -42,7 +42,7 @@ class MainController extends Controller
 
         $producto = Producto::findOrFail($data['id_producto']);
 
-        if (!$producto->activo || $producto->stock < 1) {
+        if (!$producto->estado || $producto->stock < 1) {
             if ($request->wantsJson()) {
                 return response()->json(['message' => 'Este producto no está disponible.'], 422);
             }
@@ -125,7 +125,7 @@ class MainController extends Controller
             'id' => 'id',
             'nombre' => 'nombre_categoria',
             'productos' => 'productos_count',
-            'activo' => 'activo',
+            'estado' => 'estado',
         ], 'id', 'desc');
 
         $categorias = $query->get();
@@ -138,13 +138,13 @@ class MainController extends Controller
         $data = $request->validate([
             'nombre_categoria' => ['required', 'string', 'max:100', 'unique:categorias,nombre_categoria'],
             'descripcion' => ['nullable', 'string'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         Categoria::create([
             'nombre_categoria' => $data['nombre_categoria'],
             'descripcion' => $data['descripcion'] ?? null,
-            'activo' => $request->boolean('activo', true),
+            'estado' => $request->boolean('estado', true),
         ]);
 
         return back()->with('status', 'Categoría creada correctamente.');
@@ -155,13 +155,13 @@ class MainController extends Controller
         $data = $request->validate([
             'nombre_categoria' => ['required', 'string', 'max:100', 'unique:categorias,nombre_categoria,' . $categoria->id],
             'descripcion' => ['nullable', 'string'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         $categoria->update([
             'nombre_categoria' => $data['nombre_categoria'],
             'descripcion' => $data['descripcion'] ?? null,
-            'activo' => $request->boolean('activo'),
+            'estado' => $request->boolean('estado'),
         ]);
 
         return back()->with('status', 'Categoría actualizada correctamente.');
@@ -181,7 +181,7 @@ class MainController extends Controller
     public function compraIndex(Request $request)
     {
         $query = Compra::with(['proveedor', 'usuario', 'detalles.producto'])
-            ->where('compras.estado', '!=', 'eliminada');
+            ->where('compras.situacion', '!=', 'eliminada');
 
         if ($buscar = $request->get('buscar')) {
             $query->whereHas('proveedor', fn ($q) => $q->where('nombre_empresa', 'like', "%{$buscar}%"));
@@ -201,12 +201,12 @@ class MainController extends Controller
             },
             'total' => 'compras.total',
             'fecha' => 'compras.fecha',
-            'estado' => 'compras.estado',
+            'situacion' => 'compras.situacion',
         ], 'fecha', 'desc');
 
         $compras = $query->get();
-        $proveedores = Proveedor::where('activo', true)->orderBy('nombre_empresa')->get();
-        $productos = Producto::where('activo', true)->orderBy('nombre_producto')->get();
+        $proveedores = Proveedor::where('estado', true)->orderBy('nombre_empresa')->get();
+        $productos = Producto::where('estado', true)->orderBy('nombre_producto')->get();
 
         return view('compras.index', compact('compras', 'proveedores', 'productos', 'sort', 'dir'));
     }
@@ -227,8 +227,8 @@ class MainController extends Controller
                 'id_usuario' => auth()->id(),
                 'fecha' => now(),
                 'total' => 0,
-                'estado' => 'completada',
-                'activo' => true,
+                'situacion' => 'completada',
+                'estado' => true,
             ]);
 
             $total = 0;
@@ -252,7 +252,7 @@ class MainController extends Controller
                     'cantidad' => $item['cantidad'],
                     'id_usuario' => auth()->id(),
                     'fecha' => now(),
-                    'activo' => true,
+                    'estado' => true,
                 ]);
 
                 $producto->stock += $item['cantidad'];
@@ -269,7 +269,7 @@ class MainController extends Controller
 
     public function compraUpdate(Request $request, Compra $compra)
     {
-        if ($compra->estado !== 'completada') {
+        if ($compra->situacion !== 'completada') {
             return back()->with('error', 'Solo se pueden modificar compras completadas.');
         }
 
@@ -307,7 +307,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
 
                     $producto->stock += $item['cantidad'];
@@ -328,14 +328,14 @@ class MainController extends Controller
 
     public function compraDestroy(Compra $compra)
     {
-        if ($compra->estado === 'cancelada') {
+        if ($compra->situacion === 'cancelada') {
             return back()->with('error', 'Esta compra ya está cancelada.');
         }
 
         try {
             DB::transaction(function () use ($compra) {
                 $this->revertirStockCompra($compra);
-                $compra->update(['estado' => 'cancelada', 'activo' => false]);
+                $compra->update(['situacion' => 'cancelada', 'estado' => false]);
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -382,24 +382,24 @@ class MainController extends Controller
                 'cantidad' => $fila['cantidad'],
                 'id_usuario' => auth()->id(),
                 'fecha' => now(),
-                'activo' => true,
+                'estado' => true,
             ]);
         }
     }
 
     public function compraEliminar(Compra $compra)
     {
-        if ($compra->estado === 'eliminada') {
+        if ($compra->situacion === 'eliminada') {
             return back()->with('error', 'Esta compra ya fue eliminada.');
         }
 
         try {
             DB::transaction(function () use ($compra) {
-                if ($compra->estado === 'completada') {
+                if ($compra->situacion === 'completada') {
                     $this->revertirStockCompra($compra);
                 }
 
-                $compra->update(['estado' => 'eliminada', 'activo' => false]);
+                $compra->update(['situacion' => 'eliminada', 'estado' => false]);
             });
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage());
@@ -410,25 +410,25 @@ class MainController extends Controller
 
     public function dashboardIndex()
     {
-        $ventasMes = Venta::where('estado', 'completada')
+        $ventasMes = Venta::where('situacion', 'completada')
             ->whereMonth('fecha', now()->month)
             ->whereYear('fecha', now()->year);
 
-        $comprasMes = Compra::where('estado', 'completada')
+        $comprasMes = Compra::where('situacion', 'completada')
             ->whereMonth('fecha', now()->month)
             ->whereYear('fecha', now()->year);
 
         $stats = [
-            'productos_activos' => Producto::where('activo', true)->count(),
-            'usuarios_activos' => User::where('activo', true)->count(),
+            'productos_activos' => Producto::where('estado', true)->count(),
+            'usuarios_activos' => User::where('estado', true)->count(),
             'ventas_mes_total' => (clone $ventasMes)->sum('total'),
             'ventas_mes_count' => (clone $ventasMes)->count(),
             'compras_mes_total' => (clone $comprasMes)->sum('total'),
             'compras_mes_count' => (clone $comprasMes)->count(),
-            'pedidos_pendientes' => Pedido::where('estado', 'pendiente')->count(),
+            'pedidos_pendientes' => Pedido::where('situacion', 'pendiente')->count(),
         ];
 
-        $stockProductos = Producto::where('activo', true)
+        $stockProductos = Producto::where('estado', true)
             ->orderBy('stock')
             ->take(6)
             ->get();
@@ -439,7 +439,7 @@ class MainController extends Controller
             ->get();
 
         $ultimasVentas = Venta::with('cliente')
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->orderByDesc('fecha')
             ->take(6)
             ->get();
@@ -449,22 +449,22 @@ class MainController extends Controller
 
             return [
                 'mes' => ucfirst($fecha->translatedFormat('M')),
-                'total' => (float) Venta::where('estado', 'completada')
+                'total' => (float) Venta::where('situacion', 'completada')
                     ->whereMonth('fecha', $fecha->month)
                     ->whereYear('fecha', $fecha->year)
                     ->sum('total'),
             ];
         });
 
-        $pedidosPorEstado = Pedido::where('estado', '!=', 'eliminado')
-            ->selectRaw('estado, COUNT(*) as total')
-            ->groupBy('estado')
-            ->pluck('total', 'estado');
+        $pedidosPorEstado = Pedido::where('situacion', '!=', 'eliminado')
+            ->selectRaw('situacion, COUNT(*) as total')
+            ->groupBy('situacion')
+            ->pluck('total', 'situacion');
 
-        $ventasPorEstado = Venta::where('estado', '!=', 'eliminada')
-            ->selectRaw('estado, COUNT(*) as total')
-            ->groupBy('estado')
-            ->pluck('total', 'estado');
+        $ventasPorEstado = Venta::where('situacion', '!=', 'eliminada')
+            ->selectRaw('situacion, COUNT(*) as total')
+            ->groupBy('situacion')
+            ->pluck('total', 'situacion');
 
         return view('dashboard', compact(
             'stats', 'stockProductos', 'ultimosPedidos', 'ultimasVentas',
@@ -486,8 +486,8 @@ class MainController extends Controller
                     'id_cliente' => auth()->id(),
                     'fecha' => now(),
                     'total' => 0,
-                    'estado' => 'pendiente',
-                    'activo' => true,
+                    'situacion' => 'pendiente',
+                    'estado' => true,
                 ]);
 
                 $total = 0;
@@ -495,7 +495,7 @@ class MainController extends Controller
                 foreach ($carrito as $item) {
                     $producto = Producto::lockForUpdate()->findOrFail($item['id']);
 
-                    if (!$producto->activo || $item['cantidad'] > $producto->stock) {
+                    if (!$producto->estado || $item['cantidad'] > $producto->stock) {
                         throw new \RuntimeException("\"{$producto->nombre_producto}\" ya no tiene suficiente stock disponible.");
                     }
 
@@ -519,7 +519,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
                 }
 
@@ -552,7 +552,7 @@ class MainController extends Controller
     public function pedidoIndex(Request $request)
     {
         $query = Pedido::with(['cliente', 'detalles.producto'])
-            ->where('pedidos.estado', '!=', 'eliminado');
+            ->where('pedidos.situacion', '!=', 'eliminado');
 
         if ($buscar = $request->get('buscar')) {
             $query->whereHas('cliente', fn ($q) => $q->where('name', 'like', "%{$buscar}%"));
@@ -567,12 +567,12 @@ class MainController extends Controller
             },
             'total' => 'pedidos.total',
             'fecha' => 'pedidos.fecha',
-            'estado' => 'pedidos.estado',
+            'situacion' => 'pedidos.situacion',
         ], 'fecha', 'desc');
 
         $pedidos = $query->get();
         $clientes = User::whereHas('roles', fn ($q) => $q->where('name', 'cliente'))->orderBy('name')->get();
-        $productos = Producto::where('activo', true)->where('stock', '>', 0)->orderBy('nombre_producto')->get();
+        $productos = Producto::where('estado', true)->where('stock', '>', 0)->orderBy('nombre_producto')->get();
 
         return view('pedidos.index', compact('pedidos', 'clientes', 'productos', 'sort', 'dir'));
     }
@@ -592,8 +592,8 @@ class MainController extends Controller
                     'id_cliente' => $data['id_cliente'],
                     'fecha' => now(),
                     'total' => 0,
-                    'estado' => 'pendiente',
-                    'activo' => true,
+                    'situacion' => 'pendiente',
+                    'estado' => true,
                 ]);
 
                 $total = 0;
@@ -625,7 +625,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
                 }
 
@@ -642,13 +642,13 @@ class MainController extends Controller
 
     public function pedidoDestroy(Pedido $pedido)
     {
-        if ($pedido->estado === 'eliminado') {
+        if ($pedido->situacion === 'eliminado') {
             return back()->with('error', 'Este pedido ya fue eliminado.');
         }
 
         DB::transaction(function () use ($pedido) {
 
-            if (in_array($pedido->estado, ['pendiente', 'confirmado'])) {
+            if (in_array($pedido->situacion, ['pendiente', 'confirmado'])) {
                 foreach ($pedido->detalles as $detalle) {
                     $producto = $detalle->producto;
 
@@ -662,13 +662,13 @@ class MainController extends Controller
                             'cantidad' => $detalle->cantidad,
                             'id_usuario' => auth()->id(),
                             'fecha' => now(),
-                            'activo' => true,
+                            'estado' => true,
                         ]);
                     }
                 }
             }
 
-            $pedido->update(['estado' => 'eliminado', 'activo' => false]);
+            $pedido->update(['situacion' => 'eliminado', 'estado' => false]);
         });
 
         return back()->with('status', "Pedido #{$pedido->id} eliminado correctamente.");
@@ -676,7 +676,7 @@ class MainController extends Controller
 
     public function pedidoUpdate(Request $request, Pedido $pedido)
     {
-        if (! in_array($pedido->estado, ['pendiente', 'confirmado'])) {
+        if (! in_array($pedido->situacion, ['pendiente', 'confirmado'])) {
             return back()->with('error', 'Solo se pueden modificar pedidos pendientes o confirmados.');
         }
 
@@ -701,7 +701,7 @@ class MainController extends Controller
                             'cantidad' => $detalle->cantidad,
                             'id_usuario' => auth()->id(),
                             'fecha' => now(),
-                            'activo' => true,
+                            'estado' => true,
                         ]);
                     }
                 }
@@ -733,7 +733,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
 
                     $producto->stock -= $item['cantidad'];
@@ -755,14 +755,14 @@ class MainController extends Controller
     public function pedidoUpdateEstado(Request $request, Pedido $pedido)
     {
         $data = $request->validate([
-            'estado' => ['required', 'in:confirmado,entregado,cancelado'],
+            'situacion' => ['required', 'in:confirmado,entregado,cancelado'],
         ]);
 
-        if (in_array($pedido->estado, ['entregado', 'cancelado', 'eliminado'])) {
+        if (in_array($pedido->situacion, ['entregado', 'cancelado', 'eliminado'])) {
             return back()->with('error', 'Este pedido ya no se puede modificar.');
         }
 
-        if ($data['estado'] === 'entregado') {
+        if ($data['situacion'] === 'entregado') {
             try {
                 DB::transaction(function () use ($pedido) {
                     $venta = Venta::create([
@@ -770,8 +770,8 @@ class MainController extends Controller
                         'id_vendedor' => auth()->id(),
                         'fecha' => now(),
                         'total' => 0,
-                        'estado' => 'completada',
-                        'activo' => true,
+                        'situacion' => 'completada',
+                        'estado' => true,
                     ]);
 
                     $total = 0;
@@ -797,7 +797,7 @@ class MainController extends Controller
 
                     $venta->update(['total' => $total]);
 
-                    $pedido->update(['estado' => 'entregado', 'id_venta' => $venta->id]);
+                    $pedido->update(['situacion' => 'entregado', 'id_venta' => $venta->id]);
                 });
             } catch (\RuntimeException $e) {
                 return back()->with('error', $e->getMessage());
@@ -806,7 +806,7 @@ class MainController extends Controller
             return back()->with('status', "Pedido #{$pedido->id} marcado como entregado y registrado en Ventas.");
         }
 
-        if ($data['estado'] === 'cancelado') {
+        if ($data['situacion'] === 'cancelado') {
             DB::transaction(function () use ($pedido) {
                 foreach ($pedido->detalles as $detalle) {
                     $producto = $detalle->producto;
@@ -821,20 +821,20 @@ class MainController extends Controller
                             'cantidad' => $detalle->cantidad,
                             'id_usuario' => auth()->id(),
                             'fecha' => now(),
-                            'activo' => true,
+                            'estado' => true,
                         ]);
                     }
                 }
 
-                $pedido->update(['estado' => 'cancelado']);
+                $pedido->update(['situacion' => 'cancelado']);
             });
 
             return back()->with('status', "Pedido #{$pedido->id} cancelado y stock restaurado correctamente.");
         }
 
-        $pedido->update(['estado' => $data['estado']]);
+        $pedido->update(['situacion' => $data['situacion']]);
 
-        return back()->with('status', "Pedido #{$pedido->id} marcado como \"{$data['estado']}\".");
+        return back()->with('status', "Pedido #{$pedido->id} marcado como \"{$data['situacion']}\".");
     }
 
     public function permisoIndex(Request $request)
@@ -919,11 +919,11 @@ class MainController extends Controller
             },
             'precio' => 'productos.precio',
             'stock' => 'productos.stock',
-            'activo' => 'productos.activo',
+            'estado' => 'productos.estado',
         ], 'id', 'desc');
 
         $productos = $query->get();
-        $categorias = Categoria::where('activo', true)->orderBy('nombre_categoria')->get();
+        $categorias = Categoria::where('estado', true)->orderBy('nombre_categoria')->get();
 
         return view('productos.index', compact('productos', 'categorias', 'sort', 'dir'));
     }
@@ -937,14 +937,14 @@ class MainController extends Controller
             'stock' => ['required', 'integer', 'min:0'],
             'id_categoria' => ['required', 'exists:categorias,id'],
             'imagen_producto' => ['nullable', 'image', 'max:2048'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         if ($request->hasFile('imagen_producto')) {
             $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         }
 
-        $data['activo'] = $request->boolean('activo', true);
+        $data['estado'] = $request->boolean('estado', true);
 
         DB::transaction(function () use ($data) {
             $producto = Producto::create($data);
@@ -956,7 +956,7 @@ class MainController extends Controller
                     'cantidad' => $producto->stock,
                     'id_usuario' => auth()->id(),
                     'fecha' => now(),
-                    'activo' => true,
+                    'estado' => true,
                 ]);
             }
         });
@@ -972,7 +972,7 @@ class MainController extends Controller
             'precio' => ['required', 'numeric', 'min:0.01'],
             'id_categoria' => ['required', 'exists:categorias,id'],
             'imagen_producto' => ['nullable', 'image', 'max:2048'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         if ($request->hasFile('imagen_producto')) {
@@ -981,7 +981,7 @@ class MainController extends Controller
             unset($data['imagen_producto']);
         }
 
-        $data['activo'] = $request->boolean('activo');
+        $data['estado'] = $request->boolean('estado');
 
         $precioAnterior = (float) $producto->precio;
         $precioNuevo = (float) $data['precio'];
@@ -1005,7 +1005,7 @@ class MainController extends Controller
 
     public function productoDestroy(Producto $producto)
     {
-        $producto->update(['activo' => false]);
+        $producto->update(['estado' => false]);
 
         return back()->with('status', 'Producto desactivado correctamente.');
     }
@@ -1048,7 +1048,7 @@ class MainController extends Controller
             $user->delete();
         } catch (\Illuminate\Database\QueryException $e) {
             // Tiene pedidos/ventas/compras asociadas: se desactiva en lugar de borrar.
-            $user->activo = false;
+            $user->estado = false;
             $user->save();
         }
 
@@ -1070,7 +1070,7 @@ class MainController extends Controller
             'id' => 'id',
             'nombre' => 'nombre_empresa',
             'compras' => 'compras_count',
-            'activo' => 'activo',
+            'estado' => 'estado',
         ], 'id', 'desc');
 
         $proveedores = $query->get();
@@ -1086,7 +1086,7 @@ class MainController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         Proveedor::create([
@@ -1095,7 +1095,7 @@ class MainController extends Controller
             'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'] ?? null,
             'direccion' => $data['direccion'] ?? null,
-            'activo' => $request->boolean('activo', true),
+            'estado' => $request->boolean('estado', true),
         ]);
 
         return back()->with('status', 'Proveedor creado correctamente.');
@@ -1109,7 +1109,7 @@ class MainController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
             'direccion' => ['nullable', 'string', 'max:255'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
         ]);
 
         $proveedor->update([
@@ -1118,7 +1118,7 @@ class MainController extends Controller
             'telefono' => $data['telefono'] ?? null,
             'email' => $data['email'] ?? null,
             'direccion' => $data['direccion'] ?? null,
-            'activo' => $request->boolean('activo'),
+            'estado' => $request->boolean('estado'),
         ]);
 
         return back()->with('status', 'Proveedor actualizado correctamente.');
@@ -1140,13 +1140,13 @@ class MainController extends Controller
         $desde = now()->startOfMonth();
         $hasta = now()->endOfMonth();
 
-        $totalVentas = Venta::where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
-        $totalCompras = Compra::where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
-        $productosStockBajo = Producto::where('activo', true)->where('stock', '<=', 10)->count();
+        $totalVentas = Venta::where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
+        $totalCompras = Compra::where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta])->sum('total');
+        $productosStockBajo = Producto::where('estado', true)->where('stock', '<=', 10)->count();
         $productoTop = DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.id_venta')
             ->join('productos', 'productos.id', '=', 'detalle_ventas.id_producto')
-            ->where('ventas.estado', 'completada')
+            ->where('ventas.situacion', 'completada')
             ->whereBetween('ventas.fecha', [$desde, $hasta])
             ->selectRaw('productos.nombre_producto, SUM(detalle_ventas.cantidad) as total_cantidad')
             ->groupBy('productos.id', 'productos.nombre_producto')
@@ -1161,7 +1161,7 @@ class MainController extends Controller
         [$desde, $hasta] = $this->reporteRangoFechas($request);
 
         $query = Venta::with(['cliente', 'vendedor'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idCliente = $request->get('id_cliente')) {
@@ -1180,7 +1180,7 @@ class MainController extends Controller
         [$desde, $hasta] = $this->reporteRangoFechas($request);
 
         $query = Venta::with(['cliente', 'vendedor'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idCliente = $request->get('id_cliente')) {
@@ -1200,7 +1200,7 @@ class MainController extends Controller
         [$desde, $hasta] = $this->reporteRangoFechas($request);
 
         $query = Compra::with(['proveedor', 'usuario'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idProveedor = $request->get('id_proveedor')) {
@@ -1209,7 +1209,7 @@ class MainController extends Controller
 
         $compras = $query->orderByDesc('fecha')->get();
         $totalCompras = $compras->sum('total');
-        $proveedores = Proveedor::where('activo', true)->orderBy('nombre_empresa')->get();
+        $proveedores = Proveedor::where('estado', true)->orderBy('nombre_empresa')->get();
 
         return view('reportes.compras', compact('compras', 'totalCompras', 'proveedores', 'desde', 'hasta'));
     }
@@ -1219,7 +1219,7 @@ class MainController extends Controller
         [$desde, $hasta] = $this->reporteRangoFechas($request);
 
         $query = Compra::with(['proveedor', 'usuario'])
-            ->where('estado', 'completada')
+            ->where('situacion', 'completada')
             ->whereBetween('fecha', [$desde, $hasta]);
 
         if ($idProveedor = $request->get('id_proveedor')) {
@@ -1282,7 +1282,7 @@ class MainController extends Controller
 
         $detalles = $this->reporteConsultaPreciosProveedor($request, $desde, $hasta);
         $productos = Producto::orderBy('nombre_producto')->get();
-        $proveedores = Proveedor::where('activo', true)->orderBy('nombre_empresa')->get();
+        $proveedores = Proveedor::where('estado', true)->orderBy('nombre_empresa')->get();
 
         return view('reportes.precios-proveedor', compact('detalles', 'productos', 'proveedores', 'desde', 'hasta'));
     }
@@ -1302,7 +1302,7 @@ class MainController extends Controller
     {
         $query = DetalleCompra::with(['producto', 'compra.proveedor'])
             ->whereHas('compra', function ($q) use ($desde, $hasta) {
-                $q->where('estado', 'completada')->whereBetween('fecha', [$desde, $hasta]);
+                $q->where('situacion', 'completada')->whereBetween('fecha', [$desde, $hasta]);
             });
 
         if ($idProducto = $request->get('id_producto')) {
@@ -1366,7 +1366,7 @@ class MainController extends Controller
     {
         $query = MovimientoStock::with(['producto', 'usuario'])
             ->join('productos', 'productos.id', '=', 'movimientos_stock.id_producto')
-            ->where('movimientos_stock.activo', true)
+            ->where('movimientos_stock.estado', true)
             ->select('movimientos_stock.*');
 
         if ($tipo) {
@@ -1407,7 +1407,7 @@ class MainController extends Controller
         return DetalleVenta::query()
             ->join('ventas', 'ventas.id', '=', 'detalle_ventas.id_venta')
             ->join('productos', 'productos.id', '=', 'detalle_ventas.id_producto')
-            ->where('ventas.estado', 'completada')
+            ->where('ventas.situacion', 'completada')
             ->whereBetween('ventas.fecha', [$desde, $hasta])
             ->selectRaw('productos.id, productos.nombre_producto, productos.imagen_producto, SUM(detalle_ventas.cantidad) as total_cantidad, SUM(detalle_ventas.subtotal) as total_ingresos')
             ->groupBy('productos.id', 'productos.nombre_producto', 'productos.imagen_producto')
@@ -1527,7 +1527,7 @@ class MainController extends Controller
         ], 'fecha', 'desc');
 
         $movimientos = $query->get();
-        $productos = Producto::where('activo', true)->orderBy('nombre_producto')->get();
+        $productos = Producto::where('estado', true)->orderBy('nombre_producto')->get();
 
         return view('stock.index', compact(
             'movimientos', 'productos', 'sort', 'dir',
@@ -1557,7 +1557,7 @@ class MainController extends Controller
                     'cantidad' => $data['cantidad'],
                     'id_usuario' => auth()->id(),
                     'fecha' => now(),
-                    'activo' => true,
+                    'estado' => true,
                 ]);
 
                 $producto->stock = $data['tipo'] === 'entrada'
@@ -1621,7 +1621,7 @@ class MainController extends Controller
             'name' => 'name',
             'email' => 'email',
             'telefono' => 'telefono',
-            'activo' => 'activo',
+            'estado' => 'estado',
         ], 'id', 'desc');
 
         $usuarios = $query->get();
@@ -1643,7 +1643,7 @@ class MainController extends Controller
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'password' => ['nullable', 'string', 'min:8'],
-            'activo' => ['nullable', 'boolean'],
+            'estado' => ['nullable', 'boolean'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ]);
@@ -1652,14 +1652,14 @@ class MainController extends Controller
             return back()->with('error', 'No puedes quitarte tu propio rol de administrador.');
         }
 
-        if ($user->id === auth()->id() && empty($data['activo'])) {
+        if ($user->id === auth()->id() && empty($data['estado'])) {
             return back()->with('error', 'No puedes desactivar tu propia cuenta.');
         }
 
         $user->name = $data['name'];
         $user->telefono = $data['telefono'] ?? null;
         $user->email = $data['email'];
-        $user->activo = $request->boolean('activo');
+        $user->estado = $request->boolean('estado');
 
         if (!empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -1681,7 +1681,7 @@ class MainController extends Controller
             return back()->with('error', 'No puedes eliminar tu propia cuenta desde aquí.');
         }
 
-        $user->activo = false;
+        $user->estado = false;
         $user->save();
 
         return back()->with('status', "Usuario \"{$user->name}\" desactivado correctamente.");
@@ -1742,7 +1742,7 @@ class MainController extends Controller
     public function ventaIndex(Request $request)
     {
         $query = Venta::with(['cliente', 'vendedor', 'detalles.producto', 'pedido'])
-            ->where('ventas.estado', '!=', 'eliminada');
+            ->where('ventas.situacion', '!=', 'eliminada');
 
         if ($buscar = $request->get('buscar')) {
             $query->whereHas('cliente', fn ($q) => $q->where('name', 'like', "%{$buscar}%"));
@@ -1762,12 +1762,12 @@ class MainController extends Controller
             },
             'total' => 'ventas.total',
             'fecha' => 'ventas.fecha',
-            'estado' => 'ventas.estado',
+            'situacion' => 'ventas.situacion',
         ], 'fecha', 'desc');
 
         $ventas = $query->get();
         $clientes = User::whereHas('roles', fn ($q) => $q->where('name', 'cliente'))->orderBy('name')->get();
-        $productos = Producto::where('activo', true)->where('stock', '>', 0)->orderBy('nombre_producto')->get();
+        $productos = Producto::where('estado', true)->where('stock', '>', 0)->orderBy('nombre_producto')->get();
 
         return view('ventas.index', compact('ventas', 'clientes', 'productos', 'sort', 'dir'));
     }
@@ -1788,8 +1788,8 @@ class MainController extends Controller
                     'id_vendedor' => auth()->id(),
                     'fecha' => now(),
                     'total' => 0,
-                    'estado' => 'completada',
-                    'activo' => true,
+                    'situacion' => 'completada',
+                    'estado' => true,
                 ]);
 
                 $total = 0;
@@ -1818,7 +1818,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
 
                     $producto->stock -= $item['cantidad'];
@@ -1838,7 +1838,7 @@ class MainController extends Controller
 
     public function ventaUpdate(Request $request, Venta $venta)
     {
-        if ($venta->estado !== 'completada') {
+        if ($venta->situacion !== 'completada') {
             return back()->with('error', 'Solo se pueden modificar ventas completadas.');
         }
 
@@ -1867,7 +1867,7 @@ class MainController extends Controller
                             'cantidad' => $detalle->cantidad,
                             'id_usuario' => auth()->id(),
                             'fecha' => now(),
-                            'activo' => true,
+                            'estado' => true,
                         ]);
                     }
                 }
@@ -1899,7 +1899,7 @@ class MainController extends Controller
                         'cantidad' => $item['cantidad'],
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
 
                     $producto->stock -= $item['cantidad'];
@@ -1920,7 +1920,7 @@ class MainController extends Controller
 
     public function ventaDestroy(Venta $venta)
     {
-        if ($venta->estado === 'cancelada') {
+        if ($venta->situacion === 'cancelada') {
             return back()->with('error', 'Esta venta ya está cancelada.');
         }
 
@@ -1942,12 +1942,12 @@ class MainController extends Controller
                         'cantidad' => $detalle->cantidad,
                         'id_usuario' => auth()->id(),
                         'fecha' => now(),
-                        'activo' => true,
+                        'estado' => true,
                     ]);
                 }
             }
 
-            $venta->update(['estado' => 'cancelada', 'activo' => false]);
+            $venta->update(['situacion' => 'cancelada', 'estado' => false]);
         });
 
         return back()->with('status', "Venta #{$venta->id} cancelada y stock revertido correctamente.");
@@ -1955,7 +1955,7 @@ class MainController extends Controller
 
     public function ventaEliminar(Venta $venta)
     {
-        if ($venta->estado === 'eliminada') {
+        if ($venta->situacion === 'eliminada') {
             return back()->with('error', 'Esta venta ya fue eliminada.');
         }
 
@@ -1964,7 +1964,7 @@ class MainController extends Controller
         }
 
         DB::transaction(function () use ($venta) {
-            if ($venta->estado === 'completada') {
+            if ($venta->situacion === 'completada') {
                 foreach ($venta->detalles as $detalle) {
                     $producto = $detalle->producto;
 
@@ -1978,13 +1978,13 @@ class MainController extends Controller
                             'cantidad' => $detalle->cantidad,
                             'id_usuario' => auth()->id(),
                             'fecha' => now(),
-                            'activo' => true,
+                            'estado' => true,
                         ]);
                     }
                 }
             }
 
-            $venta->update(['estado' => 'eliminada', 'activo' => false]);
+            $venta->update(['situacion' => 'eliminada', 'estado' => false]);
         });
 
         return back()->with('status', "Venta #{$venta->id} eliminada correctamente.");

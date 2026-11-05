@@ -15,11 +15,11 @@ class Categoria extends Model
     protected $fillable = [
         'nombre_categoria',
         'descripcion',
-        'activo',
+        'estado',
     ];
 
     protected $casts = [
-        'activo' => 'boolean',
+        'estado' => 'boolean',
     ];
 
     public function productos(): HasMany
