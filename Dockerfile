@@ -32,7 +32,8 @@ COPY --from=assets /app/public/build ./public/build
 RUN rm -f .env public/hot bootstrap/cache/*.php \
     && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --optimize --no-dev \
-    && chown -R www-data:www-data storage bootstrap/cache \
+    && mkdir -p public/images/productos public/images/usuarios public/images/branding \
+    && chown -R www-data:www-data storage bootstrap/cache public/images \
     && printf '%s\n' '#!/bin/sh' 'set -e' 'mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs' 'chown -R www-data:www-data storage bootstrap/cache' 'php artisan storage:link || true' 'php artisan config:cache' 'php artisan view:cache' 'if [ "$RUN_MIGRATIONS" = "true" ]; then php artisan migrate --force; fi' 'exec "$@"' > /usr/local/bin/entrypoint.sh \
     && chmod +x /usr/local/bin/entrypoint.sh
 

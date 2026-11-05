@@ -5,7 +5,7 @@
             deleteCompra: null,
             eliminarCompra: null,
             verCompra: null,
-            productos: {{ $productos->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_producto, 'precio' => (float) $p->precio, 'imagen' => $p->imagen_producto ? asset('storage/'.$p->imagen_producto) : null])->values()->toJson() }},
+            productos: {{ $productos->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_producto, 'precio' => (float) $p->precio, 'imagen' => $p->imagen_producto ? asset('images/'.$p->imagen_producto) : null])->values()->toJson() }},
             proveedores: {{ $proveedores->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_empresa])->values()->toJson() }},
             proveedorId: '',
             selProdId: '',
@@ -136,7 +136,7 @@
                                                     registrado_por: '{{ addslashes($compra->usuario->name ?? '—') }}',
                                                     fecha: '{{ $compra->fecha->format('d/m/Y H:i') }}',
                                                     total: {{ $compra->total }},
-                                                    items: {{ $compra->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('storage/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
+                                                    items: {{ $compra->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
@@ -145,7 +145,7 @@
                                                     @click="editarCompra({
                                                         id: {{ $compra->id }},
                                                         id_proveedor: {{ $compra->id_proveedor }},
-                                                        items: {{ $compra->detalles->map(fn($d) => ['id_producto' => $d->id_producto, 'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'precio' => (float) $d->precio_unitario, 'cantidad' => $d->cantidad, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('storage/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
+                                                        items: {{ $compra->detalles->map(fn($d) => ['id_producto' => $d->id_producto, 'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'precio' => (float) $d->precio_unitario, 'cantidad' => $d->cantidad, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                     })">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>

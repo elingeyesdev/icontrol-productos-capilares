@@ -14,7 +14,7 @@
     <nav class="fixed top-0 left-0 right-0 h-[62px] bg-brand-navbar shadow-navbar flex items-center px-5 z-50">
         <a href="{{ url('/') }}" class="flex items-center gap-2.5 no-underline">
             <div class="w-12 h-12 flex items-center justify-center shrink-0 transition-transform hover:rotate-6 hover:scale-105">
-                <img src="{{ asset('storage/branding/logo.png') }}" alt="Luciane" class="w-full h-full object-contain" />
+                <img src="{{ asset('images/branding/logo.png') }}" alt="Luciane" class="w-full h-full object-contain" />
             </div>
             <span class="logo-name text-2xl italic font-semibold tracking-wide">Luciane</span>
         </a>
@@ -90,7 +90,7 @@
         <div class="flex items-center gap-2.5 px-4 pt-3.5 pb-3">
             <div class="w-[45px] h-[45px] rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-brand-hover/40">
                 @if(auth()->user()?->imagen_usuario ?? false)
-                    <img src="{{ asset('storage/' . auth()->user()->imagen_usuario) }}"
+                    <img src="{{ asset('images/' . auth()->user()->imagen_usuario) }}"
                         alt="{{ auth()->user()->name }}" class="w-full h-full object-cover" />
                 @else
                     <i class="bi bi-person-fill text-xl text-brand-sub"></i>

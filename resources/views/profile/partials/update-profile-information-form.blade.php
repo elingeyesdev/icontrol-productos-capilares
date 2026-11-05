@@ -20,7 +20,7 @@
         <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-gray-100">
                 @if($user->imagen_usuario)
-                    <img src="{{ asset('storage/' . $user->imagen_usuario) }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
+                    <img src="{{ asset('images/' . $user->imagen_usuario) }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
                 @else
                     <i class="bi bi-person-fill text-2xl text-gray-400"></i>
                 @endif

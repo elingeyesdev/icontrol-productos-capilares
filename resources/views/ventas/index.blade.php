@@ -5,7 +5,7 @@
             deleteVenta: null,
             eliminarVenta: null,
             verVenta: null,
-            productos: {{ $productos->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_producto, 'precio' => (float) $p->precio, 'stock' => $p->stock, 'imagen' => $p->imagen_producto ? asset('storage/'.$p->imagen_producto) : null])->values()->toJson() }},
+            productos: {{ $productos->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_producto, 'precio' => (float) $p->precio, 'stock' => $p->stock, 'imagen' => $p->imagen_producto ? asset('images/'.$p->imagen_producto) : null])->values()->toJson() }},
             clientes: {{ $clientes->map(fn($c) => ['id' => $c->id, 'nombre' => $c->name])->values()->toJson() }},
             clienteId: '',
             selProdId: '',
@@ -144,7 +144,7 @@
                                                     vendedor: '{{ addslashes($venta->vendedor->name ?? '—') }}',
                                                     fecha: '{{ $venta->fecha->format('d/m/Y H:i') }}',
                                                     total: {{ $venta->total }},
-                                                    items: {{ $venta->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('storage/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
+                                                    items: {{ $venta->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
@@ -153,7 +153,7 @@
                                                     @click="editarVenta({
                                                         id: {{ $venta->id }},
                                                         id_cliente: {{ $venta->id_cliente }},
-                                                        items: {{ $venta->detalles->map(fn($d) => ['id_producto' => $d->id_producto, 'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'precio' => (float) $d->precio_unitario, 'cantidad' => $d->cantidad, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('storage/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
+                                                        items: {{ $venta->detalles->map(fn($d) => ['id_producto' => $d->id_producto, 'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'precio' => (float) $d->precio_unitario, 'cantidad' => $d->cantidad, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                     })">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </button>

@@ -6,7 +6,7 @@
                 'id' => $p->id,
                 'nombre' => $p->nombre_producto,
                 'categoria' => $p->categoria->nombre_categoria ?? '—',
-                'imagen' => $p->imagen_producto ? asset('storage/'.$p->imagen_producto) : null,
+                'imagen' => $p->imagen_producto ? asset('images/'.$p->imagen_producto) : null,
                 'stock' => $p->stock,
             ])->toJson() }},
             selProd: null,

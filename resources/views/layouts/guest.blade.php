@@ -18,7 +18,7 @@
 
         <div class="carousel-container">
             <div class="carousel-brand">
-                <img src="{{ asset('storage/branding/logo.png') }}" alt="Luciane">
+                <img src="{{ asset('images/branding/logo.png') }}" alt="Luciane">
                 <span class="carousel-brand-name">Luciane </span>
             </div>
 
@@ -27,7 +27,7 @@
             @endphp
             @foreach($slides as $slide)
                 <div class="carousel-frame">
-                    <img src="{{ asset('storage/branding/carrusel/' . $slide) }}" alt="">
+                    <img src="{{ asset('images/branding/carrusel/' . $slide) }}" alt="">
                 </div>
             @endforeach
         </div>

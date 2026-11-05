@@ -75,7 +75,7 @@
                                 <td>#{{ $p->id }}</td>
                                 <td>
                                     @if($p->imagen_producto)
-                                        <img src="{{ asset('storage/' . $p->imagen_producto) }}" alt="{{ $p->nombre_producto }}" class="imagen-tabla">
+                                        <img src="{{ asset('images/' . $p->imagen_producto) }}" alt="{{ $p->nombre_producto }}" class="imagen-tabla">
                                     @else
                                         <div class="imagen-tabla" style="display:flex;align-items:center;justify-content:center;background:var(--clr-sidebar);">
                                             <i class="bi bi-image" style="color:var(--clr-sub);"></i>
@@ -114,7 +114,7 @@
                                                     stock: {{ $p->stock }},
                                                     id_categoria: {{ $p->id_categoria }},
                                                     activo: {{ $p->activo ? 'true' : 'false' }},
-                                                    preview: {{ $p->imagen_producto ? "'".asset('storage/'.$p->imagen_producto)."'" : 'null' }}
+                                                    preview: {{ $p->imagen_producto ? "'".asset('images/'.$p->imagen_producto)."'" : 'null' }}
                                                 }">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>

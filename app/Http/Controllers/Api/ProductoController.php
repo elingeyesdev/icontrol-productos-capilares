@@ -77,7 +77,7 @@ class ProductoController extends Controller
         ]);
 
         if ($request->hasFile('imagen_producto')) {
-            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'public');
+            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         }
 
         $data['activo'] = $request->boolean('activo', true);
@@ -114,7 +114,7 @@ class ProductoController extends Controller
         ]);
 
         if ($request->hasFile('imagen_producto')) {
-            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'public');
+            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         } else {
             unset($data['imagen_producto']);
         }

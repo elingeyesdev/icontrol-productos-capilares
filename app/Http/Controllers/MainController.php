@@ -941,7 +941,7 @@ class MainController extends Controller
         ]);
 
         if ($request->hasFile('imagen_producto')) {
-            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'public');
+            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         }
 
         $data['activo'] = $request->boolean('activo', true);
@@ -976,7 +976,7 @@ class MainController extends Controller
         ]);
 
         if ($request->hasFile('imagen_producto')) {
-            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'public');
+            $data['imagen_producto'] = $request->file('imagen_producto')->store('productos', 'images');
         } else {
             unset($data['imagen_producto']);
         }
@@ -1026,7 +1026,7 @@ class MainController extends Controller
         }
 
         if ($request->hasFile('foto')) {
-            $request->user()->imagen_usuario = $request->file('foto')->store('usuarios', 'public');
+            $request->user()->imagen_usuario = $request->file('foto')->store('usuarios', 'images');
         }
 
         $request->user()->save();
@@ -1666,7 +1666,7 @@ class MainController extends Controller
         }
 
         if ($request->hasFile('foto')) {
-            $user->imagen_usuario = $request->file('foto')->store('usuarios', 'public');
+            $user->imagen_usuario = $request->file('foto')->store('usuarios', 'images');
         }
 
         $user->save();

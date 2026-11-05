@@ -68,7 +68,7 @@
                                     default => 'rol-default',
                                 };
                                 $imgSrc = $usuario->imagen_usuario
-                                    ? asset('storage/' . $usuario->imagen_usuario)
+                                    ? asset('images/' . $usuario->imagen_usuario)
                                     : null;
                                 $iniciales = collect(explode(' ', $usuario->name))->map(fn($p) => mb_substr($p, 0, 1))->take(2)->implode('');
                             @endphp

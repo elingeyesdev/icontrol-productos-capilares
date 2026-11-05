@@ -60,11 +60,11 @@
                             precio: {{ $p->precio }},
                             stock: {{ $p->stock }},
                             categoria: {{ Js::from($p->categoria->nombre_categoria ?? '') }},
-                            imagen: {{ $p->imagen_producto ? Js::from(asset('storage/'.$p->imagen_producto)) : 'null' }}
+                            imagen: {{ $p->imagen_producto ? Js::from(asset('images/'.$p->imagen_producto)) : 'null' }}
                          }">
                         <div class="card-img-wrap">
                             @if($p->imagen_producto)
-                                <img src="{{ asset('storage/' . $p->imagen_producto) }}" alt="{{ $p->nombre_producto }}">
+                                <img src="{{ asset('images/' . $p->imagen_producto) }}" alt="{{ $p->nombre_producto }}">
                             @else
                                 <div class="card-img-placeholder"><i class="bi bi-image"></i></div>
                             @endif

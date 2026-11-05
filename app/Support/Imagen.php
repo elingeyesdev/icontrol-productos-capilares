@@ -9,7 +9,7 @@ class Imagen
 
     public static function url(?string $path): ?string
     {
-        if (! $path || ! Storage::disk('public')->exists($path)) {
+        if (! $path || ! Storage::disk('images')->exists($path)) {
             return null;
         }
 

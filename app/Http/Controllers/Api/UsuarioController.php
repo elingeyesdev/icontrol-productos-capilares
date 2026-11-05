@@ -59,7 +59,7 @@ class UsuarioController extends Controller
         }
 
         if ($request->hasFile('foto')) {
-            $user->imagen_usuario = $request->file('foto')->store('usuarios', 'public');
+            $user->imagen_usuario = $request->file('foto')->store('usuarios', 'images');
         }
 
         $user->save();

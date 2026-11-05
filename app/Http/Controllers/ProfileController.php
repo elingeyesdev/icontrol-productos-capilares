@@ -28,7 +28,7 @@ class ProfileController extends Controller
         }
 
         if ($request->hasFile('foto')) {
-            $request->user()->imagen_usuario = $request->file('foto')->store('usuarios', 'public');
+            $request->user()->imagen_usuario = $request->file('foto')->store('usuarios', 'images');
         }
 
         $request->user()->save();

@@ -13,7 +13,7 @@ class ImagenController extends Controller
         $valido = ! str_contains($path, '..')
             && preg_match('#^(productos|usuarios|branding)/[\w\-./]+$#', $path) === 1;
 
-        $disco = Storage::disk('public');
+        $disco = Storage::disk('images');
 
         if (! $valido || ! $disco->exists($path)) {
             abort(404);
