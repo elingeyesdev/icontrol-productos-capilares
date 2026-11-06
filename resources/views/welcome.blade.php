@@ -37,7 +37,14 @@
             <div class="alert alert-error mb-4"><i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}</div>
         @endif
 
-        <div class="flex flex-wrap gap-2 mb-6">
+        <div class="filter-pills-row flex flex-wrap gap-2 mb-6"
+             x-data
+             x-init="$nextTick(() => {
+                 const a = $el.querySelector('.filter-pill-active');
+                 if (a && $el.scrollWidth > $el.clientWidth) {
+                     $el.scrollLeft = a.offsetLeft - ($el.clientWidth - a.offsetWidth) / 2;
+                 }
+             })">
             <a href="{{ url('/') }}" class="filter-pill {{ $filtro === 'Todos' && !$busqueda ? 'filter-pill-active' : '' }}">
                 <i class="bi bi-grid-heart"></i> Todos
             </a>

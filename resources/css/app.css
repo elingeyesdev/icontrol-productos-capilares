@@ -29,17 +29,17 @@
 }
 
 [data-theme="dark"] {
-    --clr-bg: #1a1424;
-    --clr-navbar: #241c33;
-    --clr-sidebar: #211a2e;
-    --clr-card: #241c33;
-    --clr-text: #ede6f7;
-    --clr-sub: #a998c4;
+    --clr-bg: #171220;
+    --clr-navbar: #2a2139;
+    --clr-sidebar: #1f1829;
+    --clr-card: #251d34;
+    --clr-text: #f0eaf9;
+    --clr-sub: #b8a9d2;
     --clr-accent: #b48ad4;
     --clr-accent2: #f0a8c0;
-    --clr-hover: #362a49;
-    --clr-active: #8c6bb0;
-    --clr-white: #251d34;
+    --clr-hover: #352947;
+    --clr-active: #8564ad;
+    --clr-white: #2a2139;
 
     --pink-bg: #3a2433;
     --purple-bg: #2c2440;
@@ -2340,3 +2340,124 @@ body {
     font-size: 15px;
     color: var(--clr-text);
 }
+
+
+/* ============================================================
+   Catálogo: filtros con scroll horizontal en móvil
+   ============================================================ */
+@media (max-width: 767px) {
+    .filter-pills-row.flex-wrap {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 4px 2px 8px;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .filter-pills-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-pills-row .filter-pill {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        scroll-snap-align: start;
+    }
+}
+
+
+/* ============================================================
+   Modo oscuro: ajustes de contraste en colores fijos
+   ============================================================ */
+[data-theme="dark"] .logo-name {
+    background: linear-gradient(110deg, #d9b8f5 0%, #f0a8c0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+[data-theme="dark"] nav .text-\[\#3a2450\] { color: var(--clr-text); }
+[data-theme="dark"] nav .text-\[\#7a5a8a\],
+[data-theme="dark"] nav .placeholder\:text-\[\#7a5a8a\]::placeholder { color: var(--clr-sub); }
+[data-theme="dark"] nav .bg-white\/25 { background: rgba(255, 255, 255, .10); }
+[data-theme="dark"] nav .hover\:bg-white\/50:hover { background: rgba(255, 255, 255, .18); }
+[data-theme="dark"] nav input[name="q"],
+[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .08); color: var(--clr-text); }
+[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .14); }
+
+[data-theme="dark"] .rol-card { background: var(--clr-card); }
+
+[data-theme="dark"] .rol-card-icon,
+[data-theme="dark"] .btn-editar,
+[data-theme="dark"] .permiso-chip,
+[data-theme="dark"] .rol-admin,
+[data-theme="dark"] .info-btn,
+[data-theme="dark"] .usr-modal-close,
+[data-theme="dark"] .usr-table-card thead th { color: #d9c5f3; }
+
+[data-theme="dark"] .cat-tag { color: #c9a8ea; }
+[data-theme="dark"] .permiso-chip-remove { color: #c9a8ea; }
+[data-theme="dark"] .permiso-chip-remove:hover { background: #b03030; color: #fff; }
+
+[data-theme="dark"] .btn-editar:hover { color: #fff; }
+
+[data-theme="dark"] .rol-cliente { color: #f2a6c6; }
+[data-theme="dark"] .rol-delivery { color: #8fd9b6; }
+[data-theme="dark"] .rol-default { color: #f0b88a; }
+[data-theme="dark"] .venta-origen--manual { color: #b8b8c4; }
+
+[data-theme="dark"] .btn-eliminar,
+[data-theme="dark"] .ajustes-field-error { color: #f4a3a3; }
+[data-theme="dark"] .btn-eliminar { background: rgba(240, 120, 120, .16); }
+[data-theme="dark"] .btn-eliminar:hover { background: #d05050; color: #fff; }
+
+[data-theme="dark"] .card-badge-stock-qty,
+[data-theme="dark"] .estado-activo,
+[data-theme="dark"] .usr-segmented-btn.active[data-tipo="entrada"] {
+    background: rgba(106, 200, 138, .18);
+    color: #8fe0b0;
+}
+
+[data-theme="dark"] .card-badge-stock-qty.out,
+[data-theme="dark"] .estado-inactivo,
+[data-theme="dark"] .usr-segmented-btn.active[data-tipo="salida"] {
+    background: rgba(240, 120, 120, .18);
+    color: #f4a3a3;
+}
+
+[data-theme="dark"] .usr-role-pill.active {
+    background: rgba(224, 87, 140, .20);
+    border-color: #e0578c;
+    color: #f5a8c8;
+}
+
+[data-theme="dark"] .usr-switch-slider { background: #4a3b63; }
+
+
+/* ============================================================
+   Modo oscuro: colores fijos escritos en style="" dentro de las vistas
+   (los estilos en línea solo se pueden pisar con !important)
+   ============================================================ */
+[data-theme="dark"] [style*="color:#5a30a0"],
+[data-theme="dark"] [style*="color: #5a30a0"] { color: #d9c5f3 !important; }
+[data-theme="dark"] [style*="color:#2a7a5a"],
+[data-theme="dark"] [style*="color: #2a7a5a"] { color: #8fd9b6 !important; }
+[data-theme="dark"] [style*="color:#a03060"],
+[data-theme="dark"] [style*="color: #a03060"] { color: #f2a6c6 !important; }
+[data-theme="dark"] [style*="color:#b03030"],
+[data-theme="dark"] [style*="color: #b03030"] { color: #f4a3a3 !important; }
+[data-theme="dark"] [style*="color:#2e7d4f"],
+[data-theme="dark"] [style*="color: #2e7d4f"] { color: #8fe0b0 !important; }
+[data-theme="dark"] [style*="color:#3a8a3a"],
+[data-theme="dark"] [style*="color: #3a8a3a"] { color: #8fe0b0 !important; }
+[data-theme="dark"] [style*="color:#2e8b57"],
+[data-theme="dark"] [style*="color: #2e8b57"] { color: #8fe0b0 !important; }
+[data-theme="dark"] [style*="background:#fde8e8"],
+[data-theme="dark"] [style*="background: #fde8e8"] { background: rgba(240, 120, 120, .18) !important; }
+[data-theme="dark"] [style*="background:#e4f4ee"],
+[data-theme="dark"] [style*="background: #e4f4ee"] { background: rgba(106, 200, 138, .18) !important; }
+[data-theme="dark"] [style*="background:#fde9f0"],
+[data-theme="dark"] [style*="background: #fde9f0"] { background: rgba(224, 87, 140, .18) !important; }
+[data-theme="dark"] [style*="background:#fff"],
+[data-theme="dark"] [style*="background: #fff"] { background: var(--clr-white) !important; }

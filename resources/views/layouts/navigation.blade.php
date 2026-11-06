@@ -76,8 +76,8 @@
                         <div style="display:flex; flex-direction:column; gap:2px; padding:6px;">
                             @foreach($pedidosPendientes as $p)
                                 <a href="{{ route('pedidos.index', ['ver' => $p->id]) }}" class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl hover:bg-brand-sidebar no-underline">
-                                    <span class="text-[12.5px] font-bold text-brand-text">#{{ $p->id }} — {{ $p->cliente->name ?? '—' }}</span>
-                                    <span class="text-[12px] font-bold text-brand-accent">Bs. {{ number_format($p->total, 2) }}</span>
+                                    <span class="text-[12.5px] font-bold text-brand-text" title="{{ $p->cliente->name ?? '' }}">#{{ $p->id }} — {{ mb_substr($p->cliente->name ?? '—', 0, 10) }}</span>
+                                    <span class="text-[12px] font-bold text-brand-accent whitespace-nowrap">{{ number_format($p->total, 2) }} Bs.</span>
                                 </a>
                             @endforeach
                         </div>
