@@ -30,7 +30,9 @@
 
 [data-theme="dark"] {
     --clr-bg: #171220;
-    --clr-navbar: #2a2139;
+    --clr-navbar: #5a3a8a;
+    --clr-purple-btn: #7b4fc0;
+    --clr-purple-btn-hover: #9160d6;
     --clr-sidebar: #1f1829;
     --clr-card: #251d34;
     --clr-text: #f0eaf9;
@@ -2380,11 +2382,11 @@ body {
 [data-theme="dark"] nav .text-\[\#3a2450\] { color: var(--clr-text); }
 [data-theme="dark"] nav .text-\[\#7a5a8a\],
 [data-theme="dark"] nav .placeholder\:text-\[\#7a5a8a\]::placeholder { color: var(--clr-sub); }
-[data-theme="dark"] nav .bg-white\/25 { background: rgba(255, 255, 255, .10); }
-[data-theme="dark"] nav .hover\:bg-white\/50:hover { background: rgba(255, 255, 255, .18); }
+[data-theme="dark"] nav .bg-white\/25 { background: rgba(255, 255, 255, .16); }
+[data-theme="dark"] nav .hover\:bg-white\/50:hover { background: rgba(255, 255, 255, .26); }
 [data-theme="dark"] nav input[name="q"],
-[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .08); color: var(--clr-text); }
-[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .14); }
+[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .14); color: #fff; }
+[data-theme="dark"] nav input[name="q"]:focus { background: rgba(255, 255, 255, .22); }
 
 [data-theme="dark"] .rol-card { background: var(--clr-card); }
 
@@ -2393,8 +2395,7 @@ body {
 [data-theme="dark"] .permiso-chip,
 [data-theme="dark"] .rol-admin,
 [data-theme="dark"] .info-btn,
-[data-theme="dark"] .usr-modal-close,
-[data-theme="dark"] .usr-table-card thead th { color: #d9c5f3; }
+[data-theme="dark"] .usr-modal-close { color: #d9c5f3; }
 
 [data-theme="dark"] .cat-tag { color: #c9a8ea; }
 [data-theme="dark"] .permiso-chip-remove { color: #c9a8ea; }
@@ -2461,3 +2462,73 @@ body {
 [data-theme="dark"] [style*="background: #fde9f0"] { background: rgba(224, 87, 140, .18) !important; }
 [data-theme="dark"] [style*="background:#fff"],
 [data-theme="dark"] [style*="background: #fff"] { background: var(--clr-white) !important; }
+
+
+/* ============================================================
+   Modo oscuro: morado en barra, tablas, filtros, notificación y botones
+   ============================================================ */
+
+/* Encabezados de tabla (el fondo sale de --clr-navbar, ahora morado) */
+[data-theme="dark"] .usr-table-card thead th { color: #f3eaff; }
+[data-theme="dark"] .th-sort-link:hover { color: #fff; }
+[data-theme="dark"] .th-sort-link--active .th-sort-icon { color: #f0a8c0; }
+
+/* Botón de notificaciones de pedidos */
+[data-theme="dark"] nav button[aria-label="Pedidos pendientes"] {
+    background: var(--clr-purple-btn);
+    color: #fff;
+}
+[data-theme="dark"] nav button[aria-label="Pedidos pendientes"]:hover {
+    background: var(--clr-purple-btn-hover);
+}
+
+/* Botones de filtro / acción de las tablas */
+[data-theme="dark"] .btn-add-user,
+[data-theme="dark"] .filter-pill.filter-pill-active {
+    background: var(--clr-purple-btn);
+    color: #fff;
+}
+[data-theme="dark"] .btn-add-user:hover { background: var(--clr-purple-btn-hover); }
+[data-theme="dark"] .filter-pill {
+    background: rgba(123, 79, 192, .22);
+    color: #d9c5f3;
+}
+[data-theme="dark"] .filter-pill:hover {
+    background: rgba(123, 79, 192, .40);
+    color: #fff;
+}
+[data-theme="dark"] .usr-sort-select select { background: var(--clr-white); }
+
+/* Botones "Guardar" (primary-button de Breeze: bg-gray-800) */
+[data-theme="dark"] .bg-gray-800 { background-color: var(--clr-purple-btn); }
+[data-theme="dark"] .bg-gray-800:hover,
+[data-theme="dark"] .bg-gray-800:focus { background-color: var(--clr-purple-btn-hover); }
+[data-theme="dark"] .bg-gray-800:active { background-color: #6a40ad; }
+
+/* Ajustes de cuenta: las 3 tarjetas, textos, inputs y modal de eliminar */
+[data-theme="dark"] .perfil-card {
+    background: var(--clr-white);
+    --tw-ring-offset-color: var(--clr-white);
+}
+[data-theme="dark"] .perfil-card .bg-white { background: var(--clr-white); }
+[data-theme="dark"] .perfil-card .bg-gray-100 { background: var(--clr-bg); }
+[data-theme="dark"] .perfil-card .text-gray-900,
+[data-theme="dark"] .perfil-card .text-gray-800,
+[data-theme="dark"] .perfil-card .text-gray-700,
+[data-theme="dark"] .perfil-card .hover\:text-gray-900:hover { color: var(--clr-text); }
+[data-theme="dark"] .perfil-card .text-gray-600,
+[data-theme="dark"] .perfil-card .text-gray-400 { color: var(--clr-sub); }
+[data-theme="dark"] .perfil-card .text-red-600 { color: #f4a3a3; }
+[data-theme="dark"] .perfil-card .text-green-600 { color: #8fe0b0; }
+[data-theme="dark"] .perfil-card .border-gray-300 { border-color: rgba(180, 138, 212, .35); }
+[data-theme="dark"] .perfil-card .hover\:bg-gray-50:hover { background: var(--clr-hover); }
+[data-theme="dark"] .perfil-card input:not([type="file"]) {
+    background: var(--clr-bg);
+    color: var(--clr-text);
+    border-color: rgba(180, 138, 212, .35);
+}
+[data-theme="dark"] .perfil-card input:not([type="file"]):focus {
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 3px rgba(180, 138, 212, .25);
+}
+[data-theme="dark"] .perfil-card input::placeholder { color: var(--clr-sub); }
