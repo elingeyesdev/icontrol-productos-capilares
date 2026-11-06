@@ -47,6 +47,7 @@ class VentaController extends Controller
                     'id_vendedor' => $request->user()->id,
                     'fecha' => now(),
                     'total' => 0,
+                    'tipo_pago' => $data['tipo_pago'] ?? null,
                     'situacion' => 'completada',
                     'estado' => true,
                 ]);
@@ -82,7 +83,7 @@ class VentaController extends Controller
 
                 $total = $this->registrarItems($venta, $data['items'], $request->user()->id);
 
-                $venta->update(['id_cliente' => $data['id_cliente'], 'total' => $total]);
+                $venta->update(['id_cliente' => $data['id_cliente'], 'tipo_pago' => $data['tipo_pago'] ?? $venta->tipo_pago, 'total' => $total]);
             });
         } catch (DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -126,6 +127,7 @@ class VentaController extends Controller
     {
         return $request->validate([
             'id_cliente' => ['required', 'exists:users,id'],
+            'tipo_pago' => ['nullable', 'in:'.implode(',', array_keys(Venta::TIPOS_PAGO))],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id_producto' => ['required', 'exists:productos,id'],
             'items.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -198,6 +200,7 @@ class VentaController extends Controller
             'fecha' => $v->fecha->format('Y-m-d H:i:s'),
             'situacion' => $v->situacion,
             'total' => (float) $v->total,
+            'tipo_pago' => $v->tipo_pago,
             'id_cliente' => $v->id_cliente,
             'cliente' => $v->cliente->name ?? '—',
             'vendedor' => $v->vendedor->name ?? '—',

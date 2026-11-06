@@ -59,6 +59,7 @@ class MainController extends Controller
             'nombre' => $producto->nombre_producto,
             'precio' => (float) $producto->precio,
             'imagen' => $producto->imagen_producto,
+            'stock' => $producto->stock,
             'cantidad' => min($producto->stock, $cantidadActual + $data['cantidad']),
         ];
 
@@ -82,6 +83,7 @@ class MainController extends Controller
 
         if (isset($carrito[$clave])) {
             $carrito[$clave]['cantidad'] = min($producto->stock, $data['cantidad']);
+            $carrito[$clave]['stock'] = $producto->stock;
             session(['carrito' => $carrito]);
         }
 
@@ -480,13 +482,30 @@ class MainController extends Controller
             return response()->json(['message' => 'Tu carrito está vacío.'], 422);
         }
 
+        $datos = $request->validate([
+            'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9+\-\s()]{6,20}$/'],
+            'direccion_entrega' => ['required', 'string', 'max:255'],
+            'nota' => ['nullable', 'string', 'max:500'],
+        ], [
+            'telefono.required' => 'Ingresa un teléfono de contacto.',
+            'telefono.regex' => 'Ingresa un teléfono válido (solo números, +, espacios o guiones).',
+            'telefono.max' => 'El teléfono no puede superar los 20 caracteres.',
+            'direccion_entrega.required' => 'Ingresa la dirección de entrega.',
+            'direccion_entrega.max' => 'La dirección no puede superar los 255 caracteres.',
+            'nota.max' => 'La nota no puede superar los 500 caracteres.',
+        ]);
+
         try {
-            $pedido = DB::transaction(function () use ($carrito) {
+            $pedido = DB::transaction(function () use ($carrito, $datos) {
+                auth()->user()->update(['telefono' => $datos['telefono']]);
+
                 $pedido = Pedido::create([
                     'id_cliente' => auth()->id(),
                     'fecha' => now(),
                     'total' => 0,
                     'situacion' => 'pendiente',
+                    'direccion_entrega' => $datos['direccion_entrega'],
+                    'nota' => $datos['nota'] ?? null,
                     'estado' => true,
                 ]);
 
@@ -574,7 +593,31 @@ class MainController extends Controller
         $clientes = User::whereHas('roles', fn ($q) => $q->where('name', 'cliente'))->orderBy('name')->get();
         $productos = Producto::where('estado', true)->where('stock', '>', 0)->orderBy('nombre_producto')->get();
 
-        return view('pedidos.index', compact('pedidos', 'clientes', 'productos', 'sort', 'dir'));
+        $pedidoAbrir = null;
+        if ($verId = $request->integer('ver')) {
+            $pedidoAbrir = Pedido::with(['cliente', 'detalles.producto'])
+                ->where('situacion', '!=', 'eliminado')
+                ->find($verId);
+        }
+
+        return view('pedidos.index', compact('pedidos', 'clientes', 'productos', 'sort', 'dir', 'pedidoAbrir'));
+    }
+
+    public function notificacionesVistas(Request $request)
+    {
+        $data = $request->validate([
+            'hasta' => ['nullable', 'date'],
+        ]);
+
+        $hasta = isset($data['hasta']) ? \Illuminate\Support\Carbon::parse($data['hasta']) : now();
+
+        if ($hasta->isFuture()) {
+            $hasta = now();
+        }
+
+        User::whereKey($request->user()->id)->update(['notificaciones_vistas_at' => $hasta]);
+
+        return response()->json(['ok' => true]);
     }
 
     public function pedidoStore(Request $request)
@@ -763,13 +806,20 @@ class MainController extends Controller
         }
 
         if ($data['situacion'] === 'entregado') {
+            $tipoPago = $request->input('tipo_pago');
+
+            if (! array_key_exists($tipoPago, Venta::TIPOS_PAGO)) {
+                return back()->with('error', 'Selecciona el tipo de pago para confirmar el pedido.');
+            }
+
             try {
-                DB::transaction(function () use ($pedido) {
+                DB::transaction(function () use ($pedido, $tipoPago) {
                     $venta = Venta::create([
                         'id_cliente' => $pedido->id_cliente,
                         'id_vendedor' => auth()->id(),
                         'fecha' => now(),
                         'total' => 0,
+                        'tipo_pago' => $tipoPago,
                         'situacion' => 'completada',
                         'estado' => true,
                     ]);
@@ -1776,6 +1826,7 @@ class MainController extends Controller
     {
         $data = $request->validate([
             'id_cliente' => ['required', 'exists:users,id'],
+            'tipo_pago' => ['required', 'in:'.implode(',', array_keys(Venta::TIPOS_PAGO))],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id_producto' => ['required', 'exists:productos,id'],
             'items.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -1788,6 +1839,7 @@ class MainController extends Controller
                     'id_vendedor' => auth()->id(),
                     'fecha' => now(),
                     'total' => 0,
+                    'tipo_pago' => $data['tipo_pago'],
                     'situacion' => 'completada',
                     'estado' => true,
                 ]);
@@ -1848,6 +1900,7 @@ class MainController extends Controller
 
         $data = $request->validate([
             'id_cliente' => ['required', 'exists:users,id'],
+            'tipo_pago' => ['required', 'in:'.implode(',', array_keys(Venta::TIPOS_PAGO))],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id_producto' => ['required', 'exists:productos,id'],
             'items.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -1908,6 +1961,7 @@ class MainController extends Controller
 
                 $venta->update([
                     'id_cliente' => $data['id_cliente'],
+                    'tipo_pago' => $data['tipo_pago'],
                     'total' => $total,
                 ]);
             });

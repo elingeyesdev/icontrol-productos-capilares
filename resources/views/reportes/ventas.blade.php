@@ -35,6 +35,7 @@
                             <th>Cliente</th>
                             <th>Vendedor</th>
                             <th>Total</th>
+                            <th>Pago</th>
                             <th>Fecha</th>
                         </tr>
                     </thead>
@@ -45,6 +46,7 @@
                                 <td style="font-weight:700;">{{ $venta->cliente->name ?? '—' }}</td>
                                 <td>{{ $venta->vendedor->name ?? '—' }}</td>
                                 <td>Bs. {{ number_format($venta->total, 2) }}</td>
+                                <td>{{ $venta->tipoPagoEtiqueta() ?? '—' }}</td>
                                 <td>{{ $venta->fecha->format('d/m/Y H:i') }}</td>
                             </tr>
                         @endforeach
@@ -52,7 +54,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="3" style="text-align:right; font-weight:800;">Total</td>
-                            <td colspan="2" style="font-weight:800; color:var(--clr-accent);">Bs. {{ number_format($totalVentas, 2) }}</td>
+                            <td colspan="3" style="font-weight:800; color:var(--clr-accent);">Bs. {{ number_format($totalVentas, 2) }}</td>
                         </tr>
                     </tfoot>
                 </table>

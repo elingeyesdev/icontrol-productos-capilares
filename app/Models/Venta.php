@@ -14,11 +14,18 @@ class Venta extends Model
 
     protected $table = 'ventas';
 
+    public const TIPOS_PAGO = [
+        'efectivo' => 'Efectivo',
+        'qr' => 'QR',
+        'transferencia' => 'Transferencia',
+    ];
+
     protected $fillable = [
         'id_cliente',
         'id_vendedor',
         'fecha',
         'total',
+        'tipo_pago',
         'situacion',
         'estado',
     ];
@@ -47,6 +54,11 @@ class Venta extends Model
     public function pedido(): HasOne
     {
         return $this->hasOne(Pedido::class, 'id_venta');
+    }
+
+    public function tipoPagoEtiqueta(): ?string
+    {
+        return self::TIPOS_PAGO[$this->tipo_pago] ?? null;
     }
 
     public function esManual(): bool

@@ -1,4 +1,22 @@
 <x-app-layout>
+    @php
+        $pedidoAbrirData = $pedidoAbrir ? [
+            'id' => $pedidoAbrir->id,
+            'cliente' => $pedidoAbrir->cliente->name ?? '—',
+            'fecha' => $pedidoAbrir->fecha->format('d/m/Y H:i'),
+            'total' => (string) $pedidoAbrir->total,
+            'telefono' => $pedidoAbrir->cliente->telefono ?? null,
+            'direccion' => $pedidoAbrir->direccion_entrega,
+            'nota' => $pedidoAbrir->nota,
+            'items' => $pedidoAbrir->detalles->map(fn($d) => [
+                'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado',
+                'cantidad' => $d->cantidad,
+                'precio' => (float) $d->precio_unitario,
+                'subtotal' => (float) $d->subtotal,
+                'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null,
+            ])->values()->all(),
+        ] : null;
+    @endphp
     <div x-data="{
             showCreate: false,
             editingId: null,
@@ -54,7 +72,11 @@
             } else {
                 editingId = null;
             }
-         })">
+         });
+         @if($pedidoAbrirData)
+         verPedido = {{ json_encode($pedidoAbrirData) }};
+         history.replaceState(null, '', window.location.pathname);
+         @endif">
 
         <div class="section-header">
             <div>
@@ -135,6 +157,9 @@
                                                     cliente: '{{ addslashes($pedido->cliente->name ?? '—') }}',
                                                     fecha: '{{ $pedido->fecha->format('d/m/Y H:i') }}',
                                                     total: {{ $pedido->total }},
+                                                    telefono: {{ json_encode($pedido->cliente->telefono ?? null) }},
+                                                    direccion: {{ json_encode($pedido->direccion_entrega) }},
+                                                    nota: {{ json_encode($pedido->nota) }},
                                                     items: {{ $pedido->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
@@ -283,7 +308,11 @@
                         </div>
                         <div class="usr-modal-body">
                             <p style="font-size:13px; margin:0 0 4px;"><strong>Cliente:</strong> <span x-text="verPedido.cliente"></span></p>
-                            <p style="font-size:13px; margin:0 0 14px;"><strong>Fecha:</strong> <span x-text="verPedido.fecha"></span></p>
+                            <p style="font-size:13px; margin:0 0 4px;"><strong>Fecha:</strong> <span x-text="verPedido.fecha"></span></p>
+                            <p x-show="verPedido.telefono" style="font-size:13px; margin:0 0 4px;"><strong>Teléfono:</strong> <span x-text="verPedido.telefono"></span></p>
+                            <p x-show="verPedido.direccion" style="font-size:13px; margin:0 0 4px;"><strong>Dirección de entrega:</strong> <span x-text="verPedido.direccion"></span></p>
+                            <p x-show="verPedido.nota" style="font-size:13px; margin:0 0 4px;"><strong>Nota:</strong> <span x-text="verPedido.nota"></span></p>
+                            <div style="height:10px;"></div>
                             <div style="display:flex; flex-direction:column; gap:6px;">
                                 <template x-for="item in verPedido.items" :key="item.nombre + item.cantidad">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--clr-bg); border-radius:10px;">
@@ -336,6 +365,15 @@
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="situacion" value="entregado">
+                                <div class="usr-card-main" style="margin-bottom:16px;">
+                                    <label>Tipo de pago</label>
+                                    <select name="tipo_pago" required>
+                                        <option value="" selected disabled>Selecciona…</option>
+                                        @foreach(\App\Models\Venta::TIPOS_PAGO as $clave => $etiqueta)
+                                            <option value="{{ $clave }}">{{ $etiqueta }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 <div class="usr-modal-footer">
                                     <button type="button" class="usr-btn-cancel" @click="confirmarPedido = null">Volver</button>
                                     <button type="submit" class="usr-btn-submit"><i class="bi bi-check-lg"></i> Confirmar</button>

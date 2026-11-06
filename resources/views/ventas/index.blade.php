@@ -8,6 +8,7 @@
             productos: {{ $productos->map(fn($p) => ['id' => $p->id, 'nombre' => $p->nombre_producto, 'precio' => (float) $p->precio, 'stock' => $p->stock, 'imagen' => $p->imagen_producto ? asset('images/'.$p->imagen_producto) : null])->values()->toJson() }},
             clientes: {{ $clientes->map(fn($c) => ['id' => $c->id, 'nombre' => $c->name])->values()->toJson() }},
             clienteId: '',
+            tipoPago: '',
             selProdId: '',
             cantidad: 1,
             cart: [],
@@ -34,6 +35,7 @@
             editarVenta(venta) {
                 this.editingId = venta.id;
                 this.clienteId = venta.id_cliente;
+                this.tipoPago = venta.tipo_pago || '';
                 this.cart = venta.items;
                 this.stockAjuste = {};
                 venta.items.forEach(i => { this.stockAjuste[i.id_producto] = (this.stockAjuste[i.id_producto] || 0) + i.cantidad; });
@@ -46,6 +48,7 @@
             if (v) {
                 if (!editingId) {
                     clienteId = clientes[0]?.id ?? '';
+                    tipoPago = '';
                     cart = [];
                     stockAjuste = {};
                     selProdId = productos[0]?.id ?? '';
@@ -106,6 +109,7 @@
                             <th>Vendedor</th>
                             <th>Productos</th>
                             <th>Total</th>
+                            <th>Pago</th>
                             <th>Fecha</th>
                             <th style="text-align:center;">Situación</th>
                             <th>Acciones</th>
@@ -119,6 +123,7 @@
                                 <td>{{ $venta->vendedor->name ?? '—' }}</td>
                                 <td>{{ $venta->detalles->count() }}</td>
                                 <td>Bs. {{ number_format($venta->total, 2) }}</td>
+                                <td>{{ $venta->tipoPagoEtiqueta() ?? '—' }}</td>
                                 <td>{{ $venta->fecha->format('d/m/Y H:i') }}</td>
                                 <td>
                                     <span class="{{ $venta->situacion === 'completada' ? 'estado-activo' : 'estado-inactivo' }}">
@@ -144,6 +149,7 @@
                                                     vendedor: '{{ addslashes($venta->vendedor->name ?? '—') }}',
                                                     fecha: '{{ $venta->fecha->format('d/m/Y H:i') }}',
                                                     total: {{ $venta->total }},
+                                                    pago: {{ json_encode($venta->tipoPagoEtiqueta()) }},
                                                     items: {{ $venta->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                 }">
                                             <i class="bi bi-eye-fill"></i>
@@ -153,6 +159,7 @@
                                                     @click="editarVenta({
                                                         id: {{ $venta->id }},
                                                         id_cliente: {{ $venta->id_cliente }},
+                                                        tipo_pago: {{ json_encode($venta->tipo_pago) }},
                                                         items: {{ $venta->detalles->map(fn($d) => ['id_producto' => $d->id_producto, 'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'precio' => (float) $d->precio_unitario, 'cantidad' => $d->cantidad, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
                                                     })">
                                                 <i class="bi bi-pencil-fill"></i>
@@ -199,6 +206,14 @@
                                 <template x-for="c in clientes" :key="c.id">
                                     <option :value="c.id" x-text="c.nombre"></option>
                                 </template>
+                            </select>
+
+                            <label style="margin-top:16px;">Tipo de pago</label>
+                            <select name="tipo_pago" x-model="tipoPago" required>
+                                <option value="" disabled>Selecciona…</option>
+                                @foreach(\App\Models\Venta::TIPOS_PAGO as $clave => $etiqueta)
+                                    <option value="{{ $clave }}">{{ $etiqueta }}</option>
+                                @endforeach
                             </select>
 
                             <p class="usr-section-label" style="margin-top:16px;">Agregar producto</p>
@@ -255,7 +270,7 @@
                                 </div>
                                 <div style="display:flex; gap:10px; justify-content:flex-end;">
                                     <button type="button" class="usr-btn-cancel" @click="showCreate = false">Cancelar</button>
-                                    <button type="submit" class="usr-btn-submit" :disabled="cart.length === 0 || !clienteId">
+                                    <button type="submit" class="usr-btn-submit" :disabled="cart.length === 0 || !clienteId || !tipoPago">
                                         <i class="bi bi-check-lg"></i> <span x-text="editingId ? 'Guardar cambios' : 'Registrar venta'"></span>
                                     </button>
                                 </div>
@@ -281,7 +296,8 @@
                         <div class="usr-modal-body">
                             <p style="font-size:13px; margin:0 0 4px;"><strong>Cliente:</strong> <span x-text="verVenta.cliente"></span></p>
                             <p style="font-size:13px; margin:0 0 4px;"><strong>Vendedor:</strong> <span x-text="verVenta.vendedor"></span></p>
-                            <p style="font-size:13px; margin:0 0 14px;"><strong>Fecha:</strong> <span x-text="verVenta.fecha"></span></p>
+                            <p style="font-size:13px; margin:0 0 4px;"><strong>Fecha:</strong> <span x-text="verVenta.fecha"></span></p>
+                            <p style="font-size:13px; margin:0 0 14px;"><strong>Tipo de pago:</strong> <span x-text="verVenta.pago || '—'"></span></p>
                             <div style="display:flex; flex-direction:column; gap:6px;">
                                 <template x-for="item in verVenta.items" :key="item.nombre + item.cantidad">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--clr-bg); border-radius:10px;">

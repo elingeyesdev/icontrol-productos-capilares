@@ -41,6 +41,7 @@ class PermissionSeeder extends Seeder
         $vendedor->syncPermissions([
             'ver-productos', 'ver-categorias', 'ver-stock',
             'ver-ventas', 'crear-ventas',
+            'ver-pedidos', 'editar-pedidos',
         ]);
 
         // Proveedor

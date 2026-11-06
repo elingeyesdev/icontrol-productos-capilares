@@ -22,6 +22,9 @@ Route::middleware(['auth', 'activo'])->group(function () {
 
     Route::post('/pedidos/checkout', [MainController::class, 'pedidoCheckout'])->name('pedidos.checkout');
     Route::get('/mis-pedidos', [MainController::class, 'pedidoMisPedidos'])->name('pedidos.mis');
+    Route::post('/notificaciones/vistas', [MainController::class, 'notificacionesVistas'])
+        ->middleware('role:administrador|vendedor')
+        ->name('notificaciones.vistas');
 });
 
 Route::middleware(['auth', 'activo'])->group(function () {

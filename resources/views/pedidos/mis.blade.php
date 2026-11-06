@@ -45,6 +45,8 @@
                                                 id: {{ $pedido->id }},
                                                 fecha: '{{ $pedido->fecha->format('d/m/Y H:i') }}',
                                                 total: {{ $pedido->total }},
+                                                direccion: {{ json_encode($pedido->direccion_entrega) }},
+                                                nota: {{ json_encode($pedido->nota) }},
                                                 items: {{ $pedido->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal])->values()->toJson() }}
                                             }">
                                         <i class="bi bi-eye-fill"></i>
@@ -70,7 +72,10 @@
                             <h2 class="usr-modal-title" x-text="'Pedido #' + verPedido.id"></h2>
                         </div>
                         <div class="usr-modal-body">
-                            <p style="font-size:13px; margin:0 0 14px;"><strong>Fecha:</strong> <span x-text="verPedido.fecha"></span></p>
+                            <p style="font-size:13px; margin:0 0 4px;"><strong>Fecha:</strong> <span x-text="verPedido.fecha"></span></p>
+                            <p x-show="verPedido.direccion" style="font-size:13px; margin:0 0 4px;"><strong>Dirección de entrega:</strong> <span x-text="verPedido.direccion"></span></p>
+                            <p x-show="verPedido.nota" style="font-size:13px; margin:0 0 4px;"><strong>Nota:</strong> <span x-text="verPedido.nota"></span></p>
+                            <div style="height:10px;"></div>
                             <div style="display:flex; flex-direction:column; gap:6px;">
                                 <template x-for="item in verPedido.items" :key="item.nombre + item.cantidad">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--clr-bg); border-radius:10px;">

@@ -24,6 +24,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'estado' => 'boolean',
+            'notificaciones_vistas_at' => 'datetime',
         ];
     }
 }

@@ -27,24 +27,41 @@
                        class="bg-white/40 focus:bg-white/60 border-none rounded-pill py-1.5 pl-8 pr-3.5 text-sm text-brand-text w-[185px] focus:w-[220px] outline-none transition-all placeholder:text-[#7a5a8a]" />
             </form>
 
-            <button type="button" id="btnTema"
-                    class="w-[38px] h-[38px] rounded-[10px] bg-white/25 hover:bg-white/50 flex items-center justify-center text-lg text-[#3a2450] transition-colors"
-                    aria-label="Cambiar tema" title="Cambiar tema">
-                <i class="bi bi-moon-stars-fill"></i>
-            </button>
-
             @hasanyrole('administrador|vendedor')
-            @php $pedidosPendientes = \App\Models\Pedido::with('cliente')->where('situacion', 'pendiente')->latest('fecha')->take(5)->get(); @endphp
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" type="button"
+            @php
+                $vistasAt = auth()->user()->notificaciones_vistas_at;
+                $pedidosNuevos = \App\Models\Pedido::where('situacion', 'pendiente')
+                    ->when($vistasAt, fn ($q) => $q->where('fecha', '>', $vistasAt))
+                    ->count();
+                $pedidosPendientes = \App\Models\Pedido::with('cliente')->where('situacion', 'pendiente')->latest('fecha')->take(5)->get();
+            @endphp
+            <div class="relative" x-data="{
+                    open: false,
+                    nuevas: {{ $pedidosNuevos }},
+                    cargadoAt: '{{ now()->toIso8601String() }}',
+                    toggle() {
+                        this.open = !this.open;
+                        if (this.open && this.nuevas > 0) this.marcarVistas();
+                    },
+                    marcarVistas() {
+                        this.nuevas = 0;
+                        fetch('{{ route('notificaciones.vistas', [], false) }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                            },
+                            body: JSON.stringify({ hasta: this.cargadoAt }),
+                        }).catch(() => {});
+                    }
+                 }">
+                <button @click="toggle()" type="button"
                         class="w-[38px] h-[38px] rounded-[10px] bg-white/25 hover:bg-white/50 flex items-center justify-center text-lg text-[#3a2450] relative transition-colors"
                         aria-label="Pedidos pendientes">
                     <i class="bi bi-bell-fill"></i>
-                    @if($pedidosPendientes->count() > 0)
-                        <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#b03030] text-white text-[10px] font-bold flex items-center justify-center">
-                            {{ $pedidosPendientes->count() }}
-                        </span>
-                    @endif
+                    <span x-show="nuevas > 0" x-cloak x-text="nuevas > 99 ? '99+' : nuevas"
+                          class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#b03030] text-white text-[10px] font-bold flex items-center justify-center"></span>
                 </button>
                 <div x-show="open" @click.outside="open = false" x-cloak
                      class="absolute top-[calc(100%+12px)] right-0 w-80 max-w-[90vw] bg-brand-white rounded-2xl shadow-card overflow-hidden z-[1200]">
@@ -58,7 +75,7 @@
                     @else
                         <div style="display:flex; flex-direction:column; gap:2px; padding:6px;">
                             @foreach($pedidosPendientes as $p)
-                                <a href="{{ route('pedidos.index') }}" class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl hover:bg-brand-sidebar no-underline">
+                                <a href="{{ route('pedidos.index', ['ver' => $p->id]) }}" class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl hover:bg-brand-sidebar no-underline">
                                     <span class="text-[12.5px] font-bold text-brand-text">#{{ $p->id }} — {{ $p->cliente->name ?? '—' }}</span>
                                     <span class="text-[12px] font-bold text-brand-accent">Bs. {{ number_format($p->total, 2) }}</span>
                                 </a>
@@ -183,11 +200,11 @@
                 <i class="bi bi-chevron-down transition-transform" :class="!moduloTransaccional && '-rotate-90'"></i>
             </button>
             <div x-show="moduloTransaccional" x-collapse>
-                @role('administrador')
+                @hasanyrole('administrador|vendedor')
                     <a href="{{ route('pedidos.index') }}" class="sidebar-link sidebar-sublink">
                         <i class="bi bi-bag-check"></i> Administrar Pedidos
                     </a>
-                @endrole
+                @endhasanyrole
                 @hasanyrole('administrador|vendedor')
                     <a href="{{ route('ventas.index') }}" class="sidebar-link sidebar-sublink">
                         <i class="bi bi-cash-coin"></i> Administrar Ventas
@@ -224,6 +241,19 @@
         @endhasanyrole
 
         <div class="h-px bg-brand-sub/20 mx-3.5 my-1.5"></div>
+        <style>
+            .tema-ui-claro { display: none; }
+            [data-theme="dark"] .tema-ui-claro { display: inline; }
+            [data-theme="dark"] .tema-ui-oscuro { display: none; }
+        </style>
+        <div class="text-[9.5px] font-extrabold tracking-widest uppercase text-brand-sub px-4 pt-3.5 pb-1">Apariencia</div>
+        <button type="button" id="btnTema" class="sidebar-link" style="width:100%; border:0; cursor:pointer; text-align:left;"
+                aria-label="Cambiar tema">
+            <i class="bi bi-moon-stars-fill tema-ui-oscuro"></i><span class="tema-ui-oscuro">Modo oscuro</span>
+            <i class="bi bi-sun-fill tema-ui-claro"></i><span class="tema-ui-claro">Modo claro</span>
+        </button>
+
+        <div class="h-px bg-brand-sub/20 mx-3.5 my-1.5"></div>
         @auth
             <div class="text-[9.5px] font-extrabold tracking-widest uppercase text-brand-sub px-4 pt-3.5 pb-1">Mi cuenta</div>
             @if(!auth()->user()->hasAnyRole(['administrador', 'vendedor']))
@@ -250,53 +280,136 @@
     </aside>
 
     @if(!auth()->check() || !auth()->user()->hasAnyRole(['administrador', 'vendedor', 'proveedor']))
-        <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-[1250]">
-            <div x-show="open" @click.outside="open = false" x-cloak x-transition
-                 class="absolute bottom-[calc(100%+14px)] right-0 w-80 max-w-[85vw] bg-brand-white rounded-2xl shadow-card overflow-hidden">
-                <div class="px-4 py-3.5 font-extrabold text-[13.5px] text-brand-text border-b border-brand-sidebar flex items-center gap-2">
-                    <i class="bi bi-cart3"></i> Mi carrito
-                </div>
-                <template x-if="$store.cart.items.length === 0">
-                    <div class="py-5 px-4 text-center text-sm text-brand-sub font-semibold">
-                        Tu carrito está vacío
-                    </div>
-                </template>
-                <template x-if="$store.cart.items.length > 0">
-                    <div>
-                        <div style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:12px;">
-                            <template x-for="item in $store.cart.items" :key="item.id">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <div style="flex:1; min-width:0;">
-                                        <div style="font-weight:700; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" x-text="item.nombre"></div>
-                                        <div style="font-size:11px; color:var(--clr-sub);" x-text="item.cantidad + ' x Bs. ' + item.precio.toFixed(2)"></div>
-                                    </div>
-                                    <button type="button" class="btn-eliminar" style="width:26px; height:26px;" title="Quitar" @click="$store.cart.remove(item.id)">
-                                        <i class="bi bi-x-lg" style="font-size:10px;"></i>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                        <div class="px-4 py-2.5 flex items-center justify-between text-[12.5px] font-bold border-t border-brand-sidebar">
-                            <span>Total</span>
-                            <span x-text="'Bs. ' + $store.cart.total.toFixed(2)"></span>
-                        </div>
-                    </div>
-                </template>
-                @auth
-                    <button type="button" @click="$store.cart.checkout()"
-                            :disabled="$store.cart.items.length === 0"
-                            class="w-full flex items-center justify-center gap-1.5 py-2.5 text-[12.5px] font-bold text-white bg-brand-accent hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                        <i class="bi bi-bag-check-fill"></i> Finalizar pedido
-                    </button>
-                @else
-                    <a href="{{ route('login') }}"
-                       class="flex items-center justify-center gap-1.5 py-2.5 text-[12.5px] font-bold text-brand-accent bg-brand-sidebar hover:text-brand-active no-underline">
-                        <i class="bi bi-box-arrow-in-right"></i> Inicia sesión para pedir
-                    </a>
-                @endauth
-            </div>
+        <style>
+            .carrito-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(20, 10, 30, .6);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity .28s ease, visibility .28s ease;
+                z-index: 1450;
+            }
+            .carrito-overlay.abierto { opacity: 1; visibility: visible; }
+            .carrito-drawer {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: 430px;
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+                background: var(--clr-card);
+                color: var(--clr-text);
+                box-shadow: -10px 0 34px rgba(0, 0, 0, .25);
+                transform: translateX(100%);
+                visibility: hidden;
+                transition: transform .3s ease, visibility .3s ease;
+                z-index: 1460;
+            }
+            .carrito-drawer.abierto { transform: translateX(0); visibility: visible; }
+            .carrito-head {
+                position: relative;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 16px 64px 16px 20px;
+                border-bottom: 1px solid rgba(180, 138, 212, .22);
+                font-size: 16px;
+                font-weight: 800;
+                color: var(--clr-text);
+            }
+            .carrito-head i { color: var(--clr-accent); }
+            .carrito-head .usr-modal-close { top: 50%; transform: translateY(-50%); }
+            .carrito-head .usr-modal-close:hover { transform: translateY(-50%) rotate(90deg); }
+            .carrito-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+            .carrito-foot {
+                padding: 14px 20px 18px;
+                border-top: 1px solid rgba(180, 138, 212, .22);
+                background: var(--clr-card);
+            }
+            .carrito-vacio {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 48px 10px;
+                text-align: center;
+                font-size: 13.5px;
+                font-weight: 700;
+                color: var(--clr-sub);
+            }
+            .carrito-vacio i { font-size: 38px; color: var(--clr-accent); }
+            .carrito-lista { display: flex; flex-direction: column; gap: 8px; }
+            .carrito-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 10px;
+                background: var(--clr-bg);
+                border-radius: 12px;
+            }
+            .carrito-item .item-thumb,
+            .carrito-item .item-thumb-placeholder { width: 52px; height: 52px; }
+            .carrito-item-info { flex: 1; min-width: 0; }
+            .carrito-item-nombre {
+                font-size: 13px;
+                font-weight: 800;
+                color: var(--clr-text);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .carrito-item-precio { font-size: 11.5px; color: var(--clr-sub); margin: 2px 0 6px; }
+            .carrito-item .usr-stepper { width: 104px; height: 28px; }
+            .carrito-item .usr-stepper button { width: 28px; font-size: 15px; }
+            .carrito-item .usr-stepper button:disabled { opacity: .35; cursor: not-allowed; }
+            .carrito-item .usr-stepper input { width: 0; min-width: 0; font-size: 13px; padding: 0; }
+            .carrito-item-der {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                justify-content: space-between;
+                align-self: stretch;
+                gap: 6px;
+            }
+            .carrito-item-subtotal { font-size: 13px; font-weight: 800; color: var(--clr-accent); white-space: nowrap; }
+            .carrito-campo { margin-top: 14px; }
+            .carrito-campo textarea { resize: vertical; min-height: 70px; }
+            .carrito-error { margin: 5px 0 0; font-size: 11.5px; font-weight: 700; color: #d05555; }
+            .carrito-alerta {
+                margin-bottom: 14px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                background: rgba(220, 80, 80, .12);
+                border: 1px solid rgba(208, 112, 112, .6);
+                color: #c04545;
+                font-size: 12.5px;
+                font-weight: 700;
+            }
+            [data-theme="dark"] .carrito-alerta { color: #f0a0a0; }
+            .carrito-foot .usr-btn-submit:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+            .carrito-toast {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 90vw;
+                padding: 10px 16px;
+                border-radius: 12px;
+                background: var(--clr-text);
+                color: var(--clr-bg);
+                font-size: 13px;
+                font-weight: 700;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, .25);
+                z-index: 1500;
+            }
+        </style>
 
-            <button @click="open = !open" type="button"
+        <div class="fixed bottom-6 right-6 z-[1250]">
+            <button @click="$store.cart.abrir()" type="button"
                     class="w-14 h-14 rounded-full bg-brand-accent hover:brightness-110 shadow-card flex items-center justify-center text-white text-xl relative transition-all"
                     aria-label="Carrito">
                 <i class="bi bi-cart3"></i>
@@ -306,21 +419,150 @@
             </button>
         </div>
 
-        <div x-show="$store.cart.toast" x-cloak x-transition
-             class="fixed bottom-24 right-6 z-[1400] bg-brand-text text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-card max-w-[85vw]"
-             x-text="$store.cart.toast"></div>
+        <div class="carrito-overlay" :class="$store.cart.open && 'abierto'" @click="$store.cart.cerrar()"></div>
+
+        <aside class="carrito-drawer" :class="$store.cart.open && 'abierto'" role="dialog" aria-label="Mi carrito"
+               @keydown.escape.window="$store.cart.cerrar()"
+               x-effect="document.body.style.overflow = $store.cart.open ? 'hidden' : ''">
+            <div class="carrito-head">
+                <i class="bi bi-cart3"></i> Mi carrito
+                <button type="button" class="usr-modal-close" @click="$store.cart.cerrar()" aria-label="Cerrar carrito">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="carrito-body">
+                <template x-if="$store.cart.items.length === 0">
+                    <div class="carrito-vacio">
+                        <i class="bi bi-cart-x"></i>
+                        <span>Tu carrito está vacío</span>
+                        <button type="button" class="usr-btn-cancel" @click="$store.cart.cerrar()">Seguir viendo productos</button>
+                    </div>
+                </template>
+
+                <template x-if="$store.cart.items.length > 0">
+                    <div>
+                        <p class="usr-section-label" style="margin-top:0;">Productos</p>
+                        <div class="carrito-lista">
+                            <template x-for="item in $store.cart.items" :key="item.id">
+                                <div class="carrito-item">
+                                    <template x-if="item.imagen">
+                                        <img :src="'{{ asset('images') }}/' + item.imagen" :alt="item.nombre" class="item-thumb">
+                                    </template>
+                                    <template x-if="!item.imagen">
+                                        <span class="item-thumb-placeholder"><i class="bi bi-image"></i></span>
+                                    </template>
+                                    <div class="carrito-item-info">
+                                        <div class="carrito-item-nombre" x-text="item.nombre"></div>
+                                        <div class="carrito-item-precio" x-text="'Bs. ' + Number(item.precio).toFixed(2) + ' c/u'"></div>
+                                        <div class="usr-stepper">
+                                            <button type="button" @click="$store.cart.cambiarCantidad(item, item.cantidad - 1)" :disabled="item.cantidad <= 1">−</button>
+                                            <input type="number" min="1" :value="item.cantidad"
+                                                   @change="$store.cart.cambiarCantidad(item, parseInt($event.target.value))">
+                                            <button type="button" @click="$store.cart.cambiarCantidad(item, item.cantidad + 1)"
+                                                    :disabled="item.stock && item.cantidad >= item.stock">+</button>
+                                        </div>
+                                    </div>
+                                    <div class="carrito-item-der">
+                                        <button type="button" class="btn-eliminar" style="width:26px; height:26px;" title="Quitar"
+                                                @click="$store.cart.remove(item.id)">
+                                            <i class="bi bi-x-lg" style="font-size:10px;"></i>
+                                        </button>
+                                        <span class="carrito-item-subtotal" x-text="'Bs. ' + (item.precio * item.cantidad).toFixed(2)"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        @auth
+                            <form id="formCarrito" class="usr-card-main" @submit.prevent="$store.cart.checkout()" novalidate>
+                                <p class="usr-section-label" style="margin-top:22px;">Datos del pedido</p>
+
+                                <div class="carrito-alerta" x-show="$store.cart.errorGeneral" x-cloak x-text="$store.cart.errorGeneral"></div>
+
+                                <div class="carrito-campo" style="margin-top:0;">
+                                    <label for="carritoTelefono">Teléfono de contacto</label>
+                                    <input id="carritoTelefono" type="tel" maxlength="20" placeholder="Ej: +591 70000000"
+                                           x-model="$store.cart.form.telefono" autocomplete="tel">
+                                    <p class="carrito-error" x-show="$store.cart.errors.telefono" x-cloak x-text="$store.cart.errors.telefono"></p>
+                                </div>
+
+                                <div class="carrito-campo">
+                                    <label for="carritoDireccion">Dirección de entrega</label>
+                                    <input id="carritoDireccion" type="text" maxlength="255" placeholder="Calle, número, zona, referencia"
+                                           x-model="$store.cart.form.direccion_entrega" autocomplete="street-address">
+                                    <p class="carrito-error" x-show="$store.cart.errors.direccion_entrega" x-cloak x-text="$store.cart.errors.direccion_entrega"></p>
+                                </div>
+
+                                <div class="carrito-campo">
+                                    <label for="carritoNota">Nota (opcional)</label>
+                                    <textarea id="carritoNota" rows="3" maxlength="500" placeholder="Indicaciones adicionales para tu pedido"
+                                              x-model="$store.cart.form.nota"></textarea>
+                                    <p class="carrito-error" x-show="$store.cart.errors.nota" x-cloak x-text="$store.cart.errors.nota"></p>
+                                </div>
+                            </form>
+                        @endauth
+                    </div>
+                </template>
+            </div>
+
+            <div class="carrito-foot">
+                <div class="usr-total-inline" style="justify-content:space-between;">
+                    <span>Total</span>
+                    <strong x-text="'Bs. ' + $store.cart.total.toFixed(2)"></strong>
+                </div>
+                @auth
+                    <button type="submit" form="formCarrito" class="usr-btn-submit"
+                            style="width:100%; justify-content:center; margin-top:12px;"
+                            :disabled="$store.cart.items.length === 0 || $store.cart.loading">
+                        <i class="bi bi-bag-check-fill"></i>
+                        <span x-text="$store.cart.loading ? 'Enviando…' : 'Confirmar pedido'"></span>
+                    </button>
+                @else
+                    <a href="{{ route('login') }}" class="usr-btn-submit"
+                       style="width:100%; justify-content:center; margin-top:12px; text-decoration:none;">
+                        <i class="bi bi-box-arrow-in-right"></i> Inicia sesión para pedir
+                    </a>
+                @endauth
+            </div>
+        </aside>
+
+        <div x-show="$store.cart.toast" x-cloak x-transition class="carrito-toast" x-text="$store.cart.toast"></div>
 
         <script>
             document.addEventListener('alpine:init', () => {
+                const cabeceras = () => ({
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                });
+
                 Alpine.store('cart', {
                     items: @json(array_values(session('carrito', []))),
                     toast: '',
+                    open: false,
+                    loading: false,
+                    errors: {},
+                    errorGeneral: '',
+                    form: {
+                        telefono: @json(auth()->check() ? (auth()->user()->telefono ?? '') : ''),
+                        direccion_entrega: '',
+                        nota: '',
+                    },
 
                     get count() {
                         return this.items.reduce((sum, i) => sum + i.cantidad, 0);
                     },
                     get total() {
                         return this.items.reduce((sum, i) => sum + (i.precio * i.cantidad), 0);
+                    },
+                    abrir() {
+                        this.errors = {};
+                        this.errorGeneral = '';
+                        this.open = true;
+                    },
+                    cerrar() {
+                        this.open = false;
                     },
                     showToast(mensaje) {
                         this.toast = mensaje;
@@ -330,11 +572,7 @@
                         try {
                             const res = await fetch('/carrito', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                },
+                                headers: cabeceras(),
                                 body: JSON.stringify({ id_producto: idProducto, cantidad: cantidad }),
                             });
                             const data = await res.json();
@@ -347,14 +585,38 @@
                             return false;
                         }
                     },
+                    async cambiarCantidad(item, cantidad) {
+                        if (!Number.isInteger(cantidad) || cantidad < 1) {
+                            this.items = this.items.slice();
+                            return;
+                        }
+                        if (item.stock && cantidad > item.stock) {
+                            this.items = this.items.slice();
+                            this.showToast('Solo hay ' + item.stock + ' unidades disponibles.');
+                            return;
+                        }
+                        try {
+                            const res = await fetch('/carrito/' + item.id, {
+                                method: 'PUT',
+                                headers: cabeceras(),
+                                body: JSON.stringify({ cantidad: cantidad }),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) { this.showToast(data.message || 'No se pudo actualizar el carrito.'); return; }
+                            this.items = data.carrito;
+                            const actualizado = this.items.find(i => i.id === item.id);
+                            if (actualizado && actualizado.cantidad < cantidad) {
+                                this.showToast('Solo hay ' + actualizado.cantidad + ' unidades disponibles.');
+                            }
+                        } catch (e) {
+                            this.showToast('Error de conexión. Intenta de nuevo.');
+                        }
+                    },
                     async remove(idProducto) {
                         try {
                             const res = await fetch('/carrito/' + idProducto, {
                                 method: 'DELETE',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                },
+                                headers: cabeceras(),
                             });
                             const data = await res.json();
                             this.items = data.carrito;
@@ -363,23 +625,41 @@
                         }
                     },
                     async checkout() {
-                        if (this.items.length === 0) return;
+                        if (this.items.length === 0 || this.loading) return;
+
+                        this.loading = true;
+                        this.errors = {};
+                        this.errorGeneral = '';
 
                         try {
                             const res = await fetch('/pedidos/checkout', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                },
+                                headers: cabeceras(),
+                                body: JSON.stringify(this.form),
                             });
                             const data = await res.json();
-                            if (!res.ok) { this.showToast(data.message || 'No se pudo completar el pedido.'); return; }
+
+                            if (res.status === 422 && data.errors) {
+                                this.errors = Object.fromEntries(
+                                    Object.entries(data.errors).map(([campo, mensajes]) => [campo, mensajes[0]])
+                                );
+                                return;
+                            }
+
+                            if (!res.ok) {
+                                this.errorGeneral = data.message || 'No se pudo completar el pedido.';
+                                return;
+                            }
+
                             this.items = [];
+                            this.form.direccion_entrega = '';
+                            this.form.nota = '';
+                            this.open = false;
                             this.showToast(data.message);
                         } catch (e) {
-                            this.showToast('Error de conexión. Intenta de nuevo.');
+                            this.errorGeneral = 'Error de conexión. Intenta de nuevo.';
+                        } finally {
+                            this.loading = false;
                         }
                     },
                 });

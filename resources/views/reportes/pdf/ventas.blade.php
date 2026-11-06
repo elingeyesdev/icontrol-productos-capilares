@@ -24,6 +24,7 @@
                 <th>Vendedor</th>
                 <th>Fecha</th>
                 <th>Total</th>
+                <th>Pago</th>
             </tr>
         </thead>
         <tbody>
@@ -34,9 +35,10 @@
                     <td>{{ $venta->vendedor->name ?? '—' }}</td>
                     <td>{{ $venta->fecha->format('d/m/Y H:i') }}</td>
                     <td>Bs. {{ number_format($venta->total, 2) }}</td>
+                    <td>{{ $venta->tipoPagoEtiqueta() ?? '—' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5">No hay ventas registradas en este rango.</td></tr>
+                <tr><td colspan="6">No hay ventas registradas en este rango.</td></tr>
             @endforelse
         </tbody>
     </table>
