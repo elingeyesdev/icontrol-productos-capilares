@@ -1,21 +1,6 @@
 <x-app-layout>
     @php
-        $pedidoAbrirData = $pedidoAbrir ? [
-            'id' => $pedidoAbrir->id,
-            'cliente' => $pedidoAbrir->cliente->name ?? '—',
-            'fecha' => $pedidoAbrir->fecha->format('d/m/Y H:i'),
-            'total' => (string) $pedidoAbrir->total,
-            'telefono' => $pedidoAbrir->cliente->telefono ?? null,
-            'direccion' => $pedidoAbrir->direccion_entrega,
-            'nota' => $pedidoAbrir->nota,
-            'items' => $pedidoAbrir->detalles->map(fn($d) => [
-                'nombre' => $d->producto->nombre_producto ?? 'Producto eliminado',
-                'cantidad' => $d->cantidad,
-                'precio' => (float) $d->precio_unitario,
-                'subtotal' => (float) $d->subtotal,
-                'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null,
-            ])->values()->all(),
-        ] : null;
+        $pedidoAbrirData = $pedidoAbrir?->detalleVista();
     @endphp
     <div x-data="{
             showCreate: false,
@@ -152,16 +137,7 @@
                                 <td>
                                     <div style="display:flex; gap:6px; justify-content:center;">
                                         <button type="button" class="btn-editar" title="Ver detalle"
-                                                @click="verPedido = {
-                                                    id: {{ $pedido->id }},
-                                                    cliente: '{{ addslashes($pedido->cliente->name ?? '—') }}',
-                                                    fecha: '{{ $pedido->fecha->format('d/m/Y H:i') }}',
-                                                    total: {{ $pedido->total }},
-                                                    telefono: {{ json_encode($pedido->cliente->telefono ?? null) }},
-                                                    direccion: {{ json_encode($pedido->direccion_entrega) }},
-                                                    nota: {{ json_encode($pedido->nota) }},
-                                                    items: {{ $pedido->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
-                                                }">
+                                                @click="verPedido = @js($pedido->detalleVista())">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
 
@@ -294,53 +270,7 @@
             </div>
         </div>
 
-        <div x-show="verPedido" x-cloak class="fixed inset-0 z-[1300] flex items-center justify-center p-4"
-             style="background: rgba(50,20,70,.45); backdrop-filter: blur(6px);">
-            <div @click.outside="verPedido = null" class="usr-modal-box usr-modal-box--md">
-                <button type="button" class="usr-modal-close" @click="verPedido = null"><i class="bi bi-x-lg"></i></button>
-                <template x-if="verPedido">
-                    <div>
-                        <div class="usr-modal-header">
-                            <span class="usr-modal-icon" style="background:var(--purple-bg); color:var(--clr-accent);">
-                                <i class="bi bi-bag-check"></i>
-                            </span>
-                            <h2 class="usr-modal-title" x-text="'Pedido #' + verPedido.id"></h2>
-                        </div>
-                        <div class="usr-modal-body">
-                            <p style="font-size:13px; margin:0 0 4px;"><strong>Cliente:</strong> <span x-text="verPedido.cliente"></span></p>
-                            <p style="font-size:13px; margin:0 0 4px;"><strong>Fecha:</strong> <span x-text="verPedido.fecha"></span></p>
-                            <p x-show="verPedido.telefono" style="font-size:13px; margin:0 0 4px;"><strong>Teléfono:</strong> <span x-text="verPedido.telefono"></span></p>
-                            <p x-show="verPedido.direccion" style="font-size:13px; margin:0 0 4px;"><strong>Dirección de entrega:</strong> <span x-text="verPedido.direccion"></span></p>
-                            <p x-show="verPedido.nota" style="font-size:13px; margin:0 0 4px;"><strong>Nota:</strong> <span x-text="verPedido.nota"></span></p>
-                            <div style="height:10px;"></div>
-                            <div style="display:flex; flex-direction:column; gap:6px;">
-                                <template x-for="item in verPedido.items" :key="item.nombre + item.cantidad">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--clr-bg); border-radius:10px;">
-                                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                            <template x-if="item.imagen">
-                                                <img :src="item.imagen" :alt="item.nombre" class="item-thumb">
-                                            </template>
-                                            <template x-if="!item.imagen">
-                                                <span class="item-thumb-placeholder"><i class="bi bi-image"></i></span>
-                                            </template>
-                                            <div style="min-width:0;">
-                                                <div style="font-weight:700; font-size:13px;" x-text="item.nombre"></div>
-                                                <div style="font-size:11.5px; color:var(--clr-sub);" x-text="item.cantidad + ' x Bs. ' + item.precio.toFixed(2)"></div>
-                                            </div>
-                                        </div>
-                                        <strong style="font-size:13px;" x-text="'Bs. ' + item.subtotal.toFixed(2)"></strong>
-                                    </div>
-                                </template>
-                            </div>
-                            <div class="usr-stock-current" style="margin-top:14px;">
-                                <span>Total</span>
-                                <strong x-text="'Bs. ' + verPedido.total"></strong>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
+        <x-detalle-panel var="verPedido" />
 
         <div x-show="confirmarPedido" x-cloak class="fixed inset-0 z-[1300] flex items-center justify-center p-4"
              style="background: rgba(50,20,70,.45); backdrop-filter: blur(6px);">

@@ -130,14 +130,7 @@
                                 <td>
                                     <div style="display:flex; gap:6px; justify-content:center;">
                                         <button type="button" class="btn-editar" title="Ver detalle"
-                                                @click="verCompra = {
-                                                    id: {{ $compra->id }},
-                                                    proveedor: '{{ addslashes($compra->proveedor->nombre_empresa ?? '—') }}',
-                                                    registrado_por: '{{ addslashes($compra->usuario->name ?? '—') }}',
-                                                    fecha: '{{ $compra->fecha->format('d/m/Y H:i') }}',
-                                                    total: {{ $compra->total }},
-                                                    items: {{ $compra->detalles->map(fn($d) => ['nombre' => $d->producto->nombre_producto ?? 'Producto eliminado', 'cantidad' => $d->cantidad, 'precio' => (float) $d->precio_unitario, 'subtotal' => (float) $d->subtotal, 'imagen' => $d->producto && $d->producto->imagen_producto ? asset('images/'.$d->producto->imagen_producto) : null])->values()->toJson() }}
-                                                }">
+                                                @click="verCompra = @js($compra->detalleVista())">
                                             <i class="bi bi-eye-fill"></i>
                                         </button>
                                         @if($compra->situacion === 'completada')
@@ -258,50 +251,7 @@
             </div>
         </div>
 
-        <div x-show="verCompra" x-cloak class="fixed inset-0 z-[1300] flex items-center justify-center p-4"
-             style="background: rgba(50,20,70,.45); backdrop-filter: blur(6px);">
-            <div @click.outside="verCompra = null" class="usr-modal-box usr-modal-box--md">
-                <button type="button" class="usr-modal-close" @click="verCompra = null"><i class="bi bi-x-lg"></i></button>
-                <template x-if="verCompra">
-                    <div>
-                        <div class="usr-modal-header">
-                            <span class="usr-modal-icon" style="background:var(--purple-bg); color:var(--clr-accent);">
-                                <i class="bi bi-bag"></i>
-                            </span>
-                            <h2 class="usr-modal-title" x-text="'Compra #' + verCompra.id"></h2>
-                        </div>
-                        <div class="usr-modal-body">
-                            <p style="font-size:13px; margin:0 0 4px;"><strong>Proveedor:</strong> <span x-text="verCompra.proveedor"></span></p>
-                            <p style="font-size:13px; margin:0 0 4px;"><strong>Registrado por:</strong> <span x-text="verCompra.registrado_por"></span></p>
-                            <p style="font-size:13px; margin:0 0 14px;"><strong>Fecha:</strong> <span x-text="verCompra.fecha"></span></p>
-                            <div style="display:flex; flex-direction:column; gap:6px;">
-                                <template x-for="item in verCompra.items" :key="item.nombre + item.cantidad">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--clr-bg); border-radius:10px;">
-                                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                            <template x-if="item.imagen">
-                                                <img :src="item.imagen" :alt="item.nombre" class="item-thumb">
-                                            </template>
-                                            <template x-if="!item.imagen">
-                                                <span class="item-thumb-placeholder"><i class="bi bi-image"></i></span>
-                                            </template>
-                                            <div style="min-width:0;">
-                                                <div style="font-weight:700; font-size:13px;" x-text="item.nombre"></div>
-                                                <div style="font-size:11.5px; color:var(--clr-sub);" x-text="item.cantidad + ' x Bs. ' + item.precio.toFixed(2)"></div>
-                                            </div>
-                                        </div>
-                                        <strong style="font-size:13px;" x-text="'Bs. ' + item.subtotal.toFixed(2)"></strong>
-                                    </div>
-                                </template>
-                            </div>
-                            <div class="usr-stock-current" style="margin-top:14px;">
-                                <span>Total</span>
-                                <strong x-text="'Bs. ' + verCompra.total"></strong>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
+        <x-detalle-panel var="verCompra" />
 
         <div x-show="deleteCompra" x-cloak class="fixed inset-0 z-[1300] flex items-center justify-center p-4"
              style="background: rgba(50,20,70,.45); backdrop-filter: blur(6px);">

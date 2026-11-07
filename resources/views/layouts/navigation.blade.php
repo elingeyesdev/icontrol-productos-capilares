@@ -20,7 +20,7 @@
         </a>
 
         <div class="ml-auto flex items-center gap-1.5">
-            <form method="GET" action="{{ url('/') }}" class="relative">
+            <form method="GET" action="{{ url('/catalogo') }}" class="relative">
                 <i class="bi bi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7a5a8a] text-sm pointer-events-none"></i>
                 <input type="text" name="q" placeholder="Buscar producto…"
                        value="{{ request('q') }}"
@@ -90,6 +90,85 @@
             </div>
             @endhasanyrole
 
+            @auth
+            @unlessrole('administrador|vendedor')
+            @php
+                $notiCliente = auth()->user()->notifications()->latest()->take(8)->get();
+                $notiSinLeer = auth()->user()->unreadNotifications()->count();
+            @endphp
+            <div class="relative" x-data="{
+                    open: false,
+                    nuevas: {{ $notiSinLeer }},
+                    toggle() {
+                        this.open = !this.open;
+                        if (this.open && this.nuevas > 0) this.marcarLeidas();
+                    },
+                    marcarLeidas() {
+                        this.nuevas = 0;
+                        fetch('{{ route('notificaciones.leidas', [], false) }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                            },
+                        }).catch(() => {});
+                    }
+                 }">
+                <button @click="toggle()" type="button"
+                        class="w-[38px] h-[38px] rounded-[10px] bg-white/25 hover:bg-white/50 flex items-center justify-center text-lg text-[#3a2450] relative transition-colors"
+                        aria-label="Notificaciones">
+                    <i class="bi bi-bell-fill"></i>
+                    <span x-show="nuevas > 0" x-cloak x-text="nuevas > 99 ? '99+' : nuevas"
+                          class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#b03030] text-white text-[10px] font-bold flex items-center justify-center"></span>
+                </button>
+                <div x-show="open" @click.outside="open = false" x-cloak
+                     class="absolute top-[calc(100%+12px)] right-0 w-80 max-w-[90vw] bg-brand-white rounded-2xl shadow-card overflow-hidden z-[1200]">
+                    <div class="px-4 py-3.5 font-extrabold text-[13.5px] text-brand-text border-b border-brand-sidebar flex items-center gap-2">
+                        <i class="bi bi-bell-fill"></i> Notificaciones
+                    </div>
+                    @if($notiCliente->isEmpty())
+                        <div class="py-5 px-4 text-center text-sm text-brand-sub font-semibold">
+                            No tienes notificaciones
+                        </div>
+                    @else
+                        <div style="display:flex; flex-direction:column; gap:2px; padding:6px; max-height:360px; overflow-y:auto;">
+                            @foreach($notiCliente as $n)
+                                @php
+                                    $d = $n->data;
+                                    $tz = config('app.timezone');
+                                    $fechaPedido = isset($d['fecha_pedido']) ? \Illuminate\Support\Carbon::parse($d['fecha_pedido'])->timezone($tz)->format('d/m/Y H:i') : null;
+                                    $fechaAcept = isset($d['fecha_aceptacion']) ? \Illuminate\Support\Carbon::parse($d['fecha_aceptacion'])->timezone($tz)->format('d/m/Y H:i') : null;
+                                @endphp
+                                <a href="{{ route('pedidos.mis') }}"
+                                   class="block px-2.5 py-2.5 rounded-xl hover:bg-brand-sidebar no-underline {{ $n->read_at ? '' : 'bg-brand-sidebar' }}">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="text-[12.5px] font-extrabold text-brand-text">
+                                            <i class="bi bi-bag-check-fill text-brand-accent"></i> Pedido #{{ $d['pedido_id'] ?? '' }} aceptado
+                                        </span>
+                                        @if(isset($d['total']))
+                                            <span class="text-[12px] font-bold text-brand-accent whitespace-nowrap">{{ number_format($d['total'], 2) }} Bs.</span>
+                                        @endif
+                                    </div>
+                                    @if($fechaPedido)
+                                        <div class="text-[11.5px] font-semibold text-brand-sub mt-1">Pedido realizado: {{ $fechaPedido }}</div>
+                                    @endif
+                                    @if($fechaAcept)
+                                        <div class="text-[11.5px] font-semibold text-brand-sub">Aceptado: {{ $fechaAcept }}</div>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+                    <a href="{{ route('pedidos.mis') }}"
+                       class="flex items-center justify-center gap-1.5 py-2.5 text-[12.5px] font-bold text-brand-accent bg-brand-sidebar hover:text-brand-active">
+                        Ver mis pedidos <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+            @endunlessrole
+            @endauth
+
             <button @click="sidebarOpen = !sidebarOpen" type="button"
                     class="lg:hidden w-[38px] h-[38px] rounded-[10px] bg-white/25 hover:bg-white/50 flex items-center justify-center text-lg text-[#3a2450]"
                     aria-label="Menú">
@@ -130,6 +209,10 @@
             <div class="text-[9.5px] font-extrabold tracking-widest uppercase text-brand-sub px-4 pt-3.5 pb-1">Catálogo</div>
             <a href="{{ url('/') }}"
                class="sidebar-link {{ request()->is('/') ? 'sidebar-link-active' : '' }}">
+                <i class="bi bi-house-heart"></i> Inicio
+            </a>
+            <a href="{{ url('/catalogo') }}"
+               class="sidebar-link {{ request()->is('catalogo') ? 'sidebar-link-active' : '' }}">
                 <i class="bi bi-grid-heart"></i> Todos los productos
             </a>
         @endunless
@@ -546,7 +629,7 @@
                     errorGeneral: '',
                     form: {
                         telefono: @json(auth()->check() ? (auth()->user()->telefono ?? '') : ''),
-                        direccion_entrega: '',
+                        direccion_entrega: @json(auth()->check() ? auth()->user()->ultimaDireccionEntrega() : ''),
                         nota: '',
                     },
 
@@ -652,7 +735,6 @@
                             }
 
                             this.items = [];
-                            this.form.direccion_entrega = '';
                             this.form.nota = '';
                             this.open = false;
                             this.showToast(data.message);

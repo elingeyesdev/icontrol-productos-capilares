@@ -45,11 +45,11 @@
                      $el.scrollLeft = a.offsetLeft - ($el.clientWidth - a.offsetWidth) / 2;
                  }
              })">
-            <a href="{{ url('/') }}" class="filter-pill {{ $filtro === 'Todos' && !$busqueda ? 'filter-pill-active' : '' }}">
+            <a href="{{ url('/catalogo') }}" class="filter-pill {{ $filtro === 'Todos' && !$busqueda ? 'filter-pill-active' : '' }}">
                 <i class="bi bi-grid-heart"></i> Todos
             </a>
             @foreach($categorias as $cat)
-                <a href="{{ url('/?cat=' . urlencode($cat->nombre_categoria)) }}"
+                <a href="{{ url('/catalogo?cat=' . urlencode($cat->nombre_categoria)) }}"
                    class="filter-pill {{ $filtro === $cat->nombre_categoria ? 'filter-pill-active' : '' }}">
                     {{ $cat->nombre_categoria }}
                 </a>
@@ -97,7 +97,7 @@
             <div class="empty-state">
                 <i class="bi bi-search-heart"></i>
                 <p>No se encontraron productos.</p>
-                <a href="{{ url('/') }}">Ver todos los productos →</a>
+                <a href="{{ url('/catalogo') }}">Ver todos los productos →</a>
             </div>
         @endif
 

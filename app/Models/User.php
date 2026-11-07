@@ -27,4 +27,17 @@ class User extends Authenticatable
             'notificaciones_vistas_at' => 'datetime',
         ];
     }
+
+    /**
+     * Dirección de entrega del último pedido del usuario (para reponerla
+     * en el carrito y que no tenga que escribirla de nuevo).
+     */
+    public function ultimaDireccionEntrega(): string
+    {
+        return (string) Pedido::where('id_cliente', $this->id)
+            ->whereNotNull('direccion_entrega')
+            ->where('direccion_entrega', '!=', '')
+            ->orderByDesc('id')
+            ->value('direccion_entrega');
+    }
 }

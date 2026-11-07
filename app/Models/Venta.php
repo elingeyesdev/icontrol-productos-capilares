@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\TieneDetalleVista;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Venta extends Model
 {
-    use HasFactory;
+    use HasFactory, TieneDetalleVista;
 
     protected $table = 'ventas';
 
@@ -64,5 +65,45 @@ class Venta extends Model
     public function esManual(): bool
     {
         return $this->pedido === null;
+    }
+
+    /** Datos listos para <x-detalle-panel>. */
+    public function detalleVista(): array
+    {
+        $this->loadMissing(['cliente', 'vendedor', 'detalles.producto', 'pedido']);
+
+        [$estado, $tono] = match ($this->situacion) {
+            'completada' => ['Completada', 'ok'],
+            'cancelada' => ['Cancelada', 'bad'],
+            default => [ucfirst((string) $this->situacion), 'info'],
+        };
+
+        $pasos = [['texto' => 'Venta realizada', 'fecha' => $this->fechaVista($this->fecha), 'tono' => 'ok']];
+        if ($this->situacion === 'cancelada') {
+            $pasos[] = ['texto' => 'Cancelada', 'fecha' => $this->fechaVista($this->updated_at), 'tono' => 'bad'];
+        }
+
+        $datos = [
+            ['icono' => 'bi-person-fill', 'etiqueta' => 'Cliente', 'valor' => $this->cliente->name ?? '—'],
+            ['icono' => 'bi-person-badge-fill', 'etiqueta' => 'Vendedor', 'valor' => $this->vendedor->name ?? '—'],
+        ];
+        if ($pago = $this->tipoPagoEtiqueta()) {
+            $datos[] = ['icono' => 'bi-wallet2', 'etiqueta' => 'Tipo de pago', 'valor' => $pago];
+        }
+        $datos[] = [
+            'icono' => 'bi-bag-check-fill',
+            'etiqueta' => 'Origen',
+            'valor' => $this->pedido ? 'Pedido #' . $this->pedido->id : 'Venta manual',
+        ];
+
+        return [
+            'tipo' => 'Venta',
+            'id' => $this->id,
+            'estado' => ['texto' => $estado, 'tono' => $tono],
+            'pasos' => $pasos,
+            'datos' => $datos,
+            'items' => $this->itemsVista($this->detalles),
+            'total' => (float) $this->total,
+        ];
     }
 }

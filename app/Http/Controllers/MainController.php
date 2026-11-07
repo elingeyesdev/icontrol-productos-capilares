@@ -16,6 +16,7 @@ use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\User;
 use App\Models\Venta;
+use App\Notifications\PedidoAceptado;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -570,7 +571,7 @@ class MainController extends Controller
 
     public function pedidoIndex(Request $request)
     {
-        $query = Pedido::with(['cliente', 'detalles.producto'])
+        $query = Pedido::with(['cliente', 'detalles.producto', 'venta'])
             ->where('pedidos.situacion', '!=', 'eliminado');
 
         if ($buscar = $request->get('buscar')) {
@@ -595,7 +596,7 @@ class MainController extends Controller
 
         $pedidoAbrir = null;
         if ($verId = $request->integer('ver')) {
-            $pedidoAbrir = Pedido::with(['cliente', 'detalles.producto'])
+            $pedidoAbrir = Pedido::with(['cliente', 'detalles.producto', 'venta'])
                 ->where('situacion', '!=', 'eliminado')
                 ->find($verId);
         }
@@ -616,6 +617,13 @@ class MainController extends Controller
         }
 
         User::whereKey($request->user()->id)->update(['notificaciones_vistas_at' => $hasta]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function notificacionesLeidas(Request $request)
+    {
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
 
         return response()->json(['ok' => true]);
     }
@@ -813,7 +821,7 @@ class MainController extends Controller
             }
 
             try {
-                DB::transaction(function () use ($pedido, $tipoPago) {
+                $venta = DB::transaction(function () use ($pedido, $tipoPago) {
                     $venta = Venta::create([
                         'id_cliente' => $pedido->id_cliente,
                         'id_vendedor' => auth()->id(),
@@ -848,10 +856,14 @@ class MainController extends Controller
                     $venta->update(['total' => $total]);
 
                     $pedido->update(['situacion' => 'entregado', 'id_venta' => $venta->id]);
+
+                    return $venta;
                 });
             } catch (\RuntimeException $e) {
                 return back()->with('error', $e->getMessage());
             }
+
+            $this->notificarPedidoAceptado($pedido, $venta);
 
             return back()->with('status', "Pedido #{$pedido->id} marcado como entregado y registrado en Ventas.");
         }
@@ -885,6 +897,21 @@ class MainController extends Controller
         $pedido->update(['situacion' => $data['situacion']]);
 
         return back()->with('status', "Pedido #{$pedido->id} marcado como \"{$data['situacion']}\".");
+    }
+
+    private function notificarPedidoAceptado(Pedido $pedido, Venta $venta): void
+    {
+        $cliente = $pedido->cliente;
+
+        if (! $cliente) {
+            return;
+        }
+
+        try {
+            $cliente->notify(new PedidoAceptado($pedido, $venta));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function permisoIndex(Request $request)

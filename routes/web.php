@@ -4,8 +4,12 @@ use App\Http\Controllers\MainController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
+    return view('inicio');
+})->name('inicio');
+
+Route::get('/catalogo', function () {
     return view('welcome');
-});
+})->name('catalogo');
 
 Route::post('/carrito', [MainController::class, 'carritoStore'])->name('carrito.store');
 Route::put('/carrito/{producto}', [MainController::class, 'carritoUpdate'])->name('carrito.update');
@@ -25,6 +29,7 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::post('/notificaciones/vistas', [MainController::class, 'notificacionesVistas'])
         ->middleware('role:administrador|vendedor')
         ->name('notificaciones.vistas');
+    Route::post('/notificaciones/leidas', [MainController::class, 'notificacionesLeidas'])->name('notificaciones.leidas');
 });
 
 Route::middleware(['auth', 'activo'])->group(function () {
