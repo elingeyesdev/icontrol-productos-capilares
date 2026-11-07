@@ -23,7 +23,20 @@ class VentaController extends Controller
             $query->whereHas('cliente', fn ($q) => $q->where('name', 'like', "%{$buscar}%"));
         }
 
+        if ($situacion = $request->get('situacion')) {
+            $query->where('situacion', $situacion);
+        }
+
         return response()->json($query->orderByDesc('fecha')->orderByDesc('id')->get()->map(fn (Venta $v) => $this->formato($v)));
+    }
+
+    public function show(Venta $venta)
+    {
+        if ($venta->situacion === 'eliminada') {
+            return response()->json(['message' => 'Esta venta fue eliminada.'], 404);
+        }
+
+        return response()->json($this->formato($venta->load(['cliente', 'vendedor', 'detalles.producto', 'pedido'])));
     }
 
     public function clientes()
@@ -34,6 +47,14 @@ class VentaController extends Controller
             ->get(['id', 'name', 'email']);
 
         return response()->json($clientes);
+    }
+
+    /** Opciones del selector "tipo de pago" (también sirven para entregar un pedido). */
+    public function tiposPago()
+    {
+        return response()->json(collect(Venta::TIPOS_PAGO)->map(
+            fn ($etiqueta, $clave) => ['clave' => $clave, 'etiqueta' => $etiqueta]
+        )->values());
     }
 
     public function store(Request $request)
@@ -47,7 +68,7 @@ class VentaController extends Controller
                     'id_vendedor' => $request->user()->id,
                     'fecha' => now(),
                     'total' => 0,
-                    'tipo_pago' => $data['tipo_pago'] ?? null,
+                    'tipo_pago' => $data['tipo_pago'],
                     'situacion' => 'completada',
                     'estado' => true,
                 ]);
@@ -77,13 +98,16 @@ class VentaController extends Controller
 
         try {
             DB::transaction(function () use ($data, $venta, $request) {
-
                 $this->devolverStock($venta, $request->user()->id);
                 $venta->detalles()->delete();
 
                 $total = $this->registrarItems($venta, $data['items'], $request->user()->id);
 
-                $venta->update(['id_cliente' => $data['id_cliente'], 'tipo_pago' => $data['tipo_pago'] ?? $venta->tipo_pago, 'total' => $total]);
+                $venta->update([
+                    'id_cliente' => $data['id_cliente'],
+                    'tipo_pago' => $data['tipo_pago'],
+                    'total' => $total,
+                ]);
             });
         } catch (DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -98,6 +122,10 @@ class VentaController extends Controller
             return response()->json(['message' => 'Esta venta ya está cancelada.'], 422);
         }
 
+        if (! $venta->esManual()) {
+            return response()->json(['message' => 'Esta venta proviene de un pedido entregado; gestiona el pedido en lugar de la venta.'], 422);
+        }
+
         DB::transaction(function () use ($venta, $request) {
             $this->devolverStock($venta, $request->user()->id);
             $venta->update(['situacion' => 'cancelada', 'estado' => false]);
@@ -110,6 +138,10 @@ class VentaController extends Controller
     {
         if ($venta->situacion === 'eliminada') {
             return response()->json(['message' => 'Esta venta ya fue eliminada.'], 422);
+        }
+
+        if (! $venta->esManual()) {
+            return response()->json(['message' => 'Esta venta proviene de un pedido entregado; gestiona el pedido en lugar de la venta.'], 422);
         }
 
         DB::transaction(function () use ($venta, $request) {
@@ -127,7 +159,7 @@ class VentaController extends Controller
     {
         return $request->validate([
             'id_cliente' => ['required', 'exists:users,id'],
-            'tipo_pago' => ['nullable', 'in:'.implode(',', array_keys(Venta::TIPOS_PAGO))],
+            'tipo_pago' => ['required', 'in:'.implode(',', array_keys(Venta::TIPOS_PAGO))],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id_producto' => ['required', 'exists:productos,id'],
             'items.*.cantidad' => ['required', 'integer', 'min:1'],
@@ -201,10 +233,12 @@ class VentaController extends Controller
             'situacion' => $v->situacion,
             'total' => (float) $v->total,
             'tipo_pago' => $v->tipo_pago,
+            'tipo_pago_texto' => $v->tipoPagoEtiqueta(),
             'id_cliente' => $v->id_cliente,
             'cliente' => $v->cliente->name ?? '—',
             'vendedor' => $v->vendedor->name ?? '—',
             'manual' => $v->pedido === null,
+            'pedido_id' => $v->pedido?->id,
             'items' => $v->detalles->map(fn ($d) => [
                 'id_producto' => $d->id_producto,
                 'producto' => $d->producto->nombre_producto ?? 'Producto eliminado',

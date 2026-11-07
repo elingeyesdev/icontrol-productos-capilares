@@ -118,6 +118,8 @@ class AuthController extends Controller
             'telefono' => $user->telefono,
             'rol' => $user->roles->first()?->name,
             'foto' => Imagen::url($user->imagen_usuario),
+            // Para que la app muestre solo los módulos que el usuario puede usar.
+            'permisos' => $user->getAllPermissions()->pluck('name')->values(),
         ];
     }
 }

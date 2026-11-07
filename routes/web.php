@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\KpiController;
 use App\Http\Controllers\MainController;
 use Illuminate\Support\Facades\Route;
 
@@ -113,6 +114,10 @@ Route::middleware(['auth', 'activo'])->group(function () {
 
     Route::middleware('permission:ver-kpis')->group(function () {
         Route::get('/kpis', [MainController::class, 'kpisIndex'])->name('kpis.index');
+        Route::get('/kpis/ventas', [KpiController::class, 'ventas'])->name('kpis.ventas');
+        Route::get('/kpis/inventario', [KpiController::class, 'inventario'])->name('kpis.inventario');
+        Route::get('/kpis/pedidos', [KpiController::class, 'pedidos'])->name('kpis.pedidos');
+        Route::get('/kpis/compras', [KpiController::class, 'compras'])->name('kpis.compras');
     });
 
     Route::middleware('permission:ver-reportes')->prefix('reportes')->name('reportes.')->group(function () {

@@ -7,6 +7,8 @@ use App\Models\Compra;
 use App\Models\DetalleCompra;
 use App\Models\MovimientoStock;
 use App\Models\Producto;
+use App\Models\Proveedor;
+use DomainException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +23,31 @@ class CompraController extends Controller
             $query->whereHas('proveedor', fn ($q) => $q->where('nombre_empresa', 'like', "%{$buscar}%"));
         }
 
+        if ($situacion = $request->get('situacion')) {
+            $query->where('situacion', $situacion);
+        }
+
         return response()->json($query->orderByDesc('fecha')->orderByDesc('id')->get()->map(fn (Compra $c) => $this->formato($c)));
+    }
+
+    public function show(Compra $compra)
+    {
+        if ($compra->situacion === 'eliminada') {
+            return response()->json(['message' => 'Esta compra fue eliminada.'], 404);
+        }
+
+        return response()->json($this->formato($compra->load(['proveedor', 'usuario', 'detalles.producto'])));
+    }
+
+    /**
+     * Proveedores activos para el selector de la compra. Se sirve bajo ver-compras
+     * porque el rol "proveedor" puede registrar compras sin tener ver-proveedores.
+     */
+    public function proveedores()
+    {
+        return response()->json(
+            Proveedor::where('estado', true)->orderBy('nombre_empresa')->get(['id', 'nombre_empresa'])
+        );
     }
 
     public function store(Request $request)
@@ -54,15 +80,18 @@ class CompraController extends Controller
 
         $data = $this->validar($request);
 
-        DB::transaction(function () use ($data, $compra, $request) {
+        try {
+            DB::transaction(function () use ($data, $compra, $request) {
+                $this->revertirStock($compra, $request->user()->id);
+                $compra->detalles()->delete();
 
-            $this->revertirStock($compra, $request->user()->id);
-            $compra->detalles()->delete();
+                $total = $this->registrarItems($compra, $data['items'], $request->user()->id);
 
-            $total = $this->registrarItems($compra, $data['items'], $request->user()->id);
-
-            $compra->update(['id_proveedor' => $data['id_proveedor'], 'total' => $total]);
-        });
+                $compra->update(['id_proveedor' => $data['id_proveedor'], 'total' => $total]);
+            });
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json($this->formato($compra->fresh(['proveedor', 'usuario', 'detalles.producto'])));
     }
@@ -73,10 +102,14 @@ class CompraController extends Controller
             return response()->json(['message' => 'Esta compra ya está cancelada.'], 422);
         }
 
-        DB::transaction(function () use ($compra, $request) {
-            $this->revertirStock($compra, $request->user()->id);
-            $compra->update(['situacion' => 'cancelada', 'estado' => false]);
-        });
+        try {
+            DB::transaction(function () use ($compra, $request) {
+                $this->revertirStock($compra, $request->user()->id);
+                $compra->update(['situacion' => 'cancelada', 'estado' => false]);
+            });
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['message' => "Compra #{$compra->id} cancelada y stock revertido correctamente."]);
     }
@@ -87,13 +120,17 @@ class CompraController extends Controller
             return response()->json(['message' => 'Esta compra ya fue eliminada.'], 422);
         }
 
-        DB::transaction(function () use ($compra, $request) {
-            if ($compra->situacion === 'completada') {
-                $this->revertirStock($compra, $request->user()->id);
-            }
+        try {
+            DB::transaction(function () use ($compra, $request) {
+                if ($compra->situacion === 'completada') {
+                    $this->revertirStock($compra, $request->user()->id);
+                }
 
-            $compra->update(['situacion' => 'eliminada', 'estado' => false]);
-        });
+                $compra->update(['situacion' => 'eliminada', 'estado' => false]);
+            });
+        } catch (DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['message' => "Compra #{$compra->id} eliminada correctamente."]);
     }
@@ -114,7 +151,7 @@ class CompraController extends Controller
         $total = 0;
 
         foreach ($items as $item) {
-            $producto = Producto::findOrFail($item['id_producto']);
+            $producto = Producto::lockForUpdate()->findOrFail($item['id_producto']);
             $subtotal = round($item['precio_unitario'] * $item['cantidad'], 2);
             $total += $subtotal;
 
@@ -141,29 +178,45 @@ class CompraController extends Controller
         return $total;
     }
 
+    /**
+     * Revierte el stock que aportó la compra. Igual que la web: si parte de ese stock
+     * ya salió (vendido, etc.) falla en lugar de dejar el inventario inconsistente.
+     */
     private function revertirStock(Compra $compra, int $idUsuario): void
     {
-        foreach ($compra->detalles as $detalle) {
-            $producto = $detalle->producto;
+        $porProducto = [];
+
+        foreach ($compra->detalles()->get() as $detalle) {
+            $producto = Producto::lockForUpdate()->find($detalle->id_producto);
 
             if (! $producto) {
                 continue;
             }
 
-            $nuevoStock = max(0, $producto->stock - $detalle->cantidad);
-            $revertido = $producto->stock - $nuevoStock;
-            $producto->update(['stock' => $nuevoStock]);
+            $porProducto[$producto->id] ??= ['producto' => $producto, 'cantidad' => 0];
+            $porProducto[$producto->id]['cantidad'] += $detalle->cantidad;
+        }
 
-            if ($revertido > 0) {
-                MovimientoStock::create([
-                    'id_producto' => $producto->id,
-                    'tipo' => 'salida',
-                    'cantidad' => $revertido,
-                    'id_usuario' => $idUsuario,
-                    'fecha' => now(),
-                    'estado' => true,
-                ]);
+        foreach ($porProducto as $fila) {
+            if ($fila['producto']->stock < $fila['cantidad']) {
+                throw new DomainException(
+                    "No se puede revertir la compra #{$compra->id}: \"{$fila['producto']->nombre_producto}\" tiene {$fila['producto']->stock} en stock y la compra aportó {$fila['cantidad']} (parte ya salió del inventario)."
+                );
             }
+        }
+
+        foreach ($porProducto as $fila) {
+            $producto = $fila['producto'];
+            $producto->decrement('stock', $fila['cantidad']);
+
+            MovimientoStock::create([
+                'id_producto' => $producto->id,
+                'tipo' => 'salida',
+                'cantidad' => $fila['cantidad'],
+                'id_usuario' => $idUsuario,
+                'fecha' => now(),
+                'estado' => true,
+            ]);
         }
     }
 

@@ -28,6 +28,10 @@ class RolController extends Controller
 
     public function update(Request $request, Role $role)
     {
+        if (in_array($role->name, ['administrador', 'vendedor', 'cliente'])) {
+            return response()->json(['message' => 'No puedes renombrar un rol base del sistema.'], 422);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:50', 'unique:roles,name,'.$role->id],
         ]);

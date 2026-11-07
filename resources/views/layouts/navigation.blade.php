@@ -327,7 +327,23 @@
                 <div x-show="moduloKpis" x-collapse>
                     <a href="{{ route('kpis.index') }}"
                        class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.index') ? 'sidebar-link-active' : '' }}">
-                        <i class="bi bi-bar-chart-fill"></i> Estadísticas y KPIs
+                        <i class="bi bi-bar-chart-fill"></i> Resumen
+                    </a>
+                    <a href="{{ route('kpis.ventas') }}"
+                       class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.ventas') ? 'sidebar-link-active' : '' }}">
+                        <i class="bi bi-cash-coin"></i> Ventas
+                    </a>
+                    <a href="{{ route('kpis.inventario') }}"
+                       class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.inventario') ? 'sidebar-link-active' : '' }}">
+                        <i class="bi bi-box-seam"></i> Inventario
+                    </a>
+                    <a href="{{ route('kpis.pedidos') }}"
+                       class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.pedidos') ? 'sidebar-link-active' : '' }}">
+                        <i class="bi bi-bag-check"></i> Pedidos
+                    </a>
+                    <a href="{{ route('kpis.compras') }}"
+                       class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.compras') ? 'sidebar-link-active' : '' }}">
+                        <i class="bi bi-arrow-left-right"></i> Compras y balance
                     </a>
                 </div>
             @endcan
@@ -368,6 +384,9 @@
         @else
             <a href="{{ route('login') }}" class="sidebar-link">
                 <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+            </a>
+            <a href="{{ route('register') }}" class="sidebar-link">
+                <i class="bi bi-person-plus"></i> Registrarse
             </a>
         @endauth
     </aside>
