@@ -9,7 +9,7 @@
     })();
 </script>
 
-<div x-data="{ sidebarOpen: false, moduloSeguridad: {{ request()->is('administrador/usuarios*') || request()->is('administrador/roles*') ? 'true' : 'false' }}, moduloParametrizacion: true, moduloTransaccional: true, moduloReportes: {{ request()->is('reportes*') ? 'true' : 'false' }} }">
+<div x-data="{ sidebarOpen: false, moduloSeguridad: {{ request()->is('administrador/usuarios*') || request()->is('administrador/roles*') ? 'true' : 'false' }}, moduloParametrizacion: true, moduloTransaccional: true, moduloReportes: {{ request()->is('reportes*') ? 'true' : 'false' }}, moduloKpis: {{ request()->is('kpis*') ? 'true' : 'false' }} }">
     
     <nav class="fixed top-0 left-0 right-0 h-[62px] bg-brand-navbar shadow-navbar flex items-center px-5 z-50">
         <a href="{{ url('/') }}" class="flex items-center gap-2.5 no-underline">
@@ -20,7 +20,7 @@
         </a>
 
         <div class="ml-auto flex items-center gap-1.5">
-            <form method="GET" action="{{ url('/catalogo') }}" class="relative">
+            <form method="GET" action="{{ url('/') }}" class="relative">
                 <i class="bi bi-search absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7a5a8a] text-sm pointer-events-none"></i>
                 <input type="text" name="q" placeholder="Buscar producto…"
                        value="{{ request('q') }}"
@@ -209,10 +209,6 @@
             <div class="text-[9.5px] font-extrabold tracking-widest uppercase text-brand-sub px-4 pt-3.5 pb-1">Catálogo</div>
             <a href="{{ url('/') }}"
                class="sidebar-link {{ request()->is('/') ? 'sidebar-link-active' : '' }}">
-                <i class="bi bi-house-heart"></i> Inicio
-            </a>
-            <a href="{{ url('/catalogo') }}"
-               class="sidebar-link {{ request()->is('catalogo') ? 'sidebar-link-active' : '' }}">
                 <i class="bi bi-grid-heart"></i> Todos los productos
             </a>
         @endunless
@@ -226,14 +222,14 @@
             @role('administrador')
                 <a href="{{ route('dashboard') }}"
                    class="sidebar-link {{ request()->routeIs('dashboard') ? 'sidebar-link-active' : '' }}">
-                    <i class="bi bi-bar-chart-fill"></i> Inicio
+                    <i class="bi bi-house-door-fill"></i> Inicio
                 </a>
             @endrole
 
             @role('administrador')
                 <button @click="moduloSeguridad = !moduloSeguridad" type="button" class="sidebar-module">
                     <i class="bi bi-lock-fill"></i>
-                    <span>Módulo de Seguridad</span>
+                    <span>Seguridad</span>
                     <i class="bi bi-chevron-down transition-transform" :class="!moduloSeguridad && '-rotate-90'"></i>
                 </button>
                 <div x-show="moduloSeguridad" x-collapse>
@@ -254,7 +250,7 @@
 
             <button @click="moduloParametrizacion = !moduloParametrizacion" type="button" class="sidebar-module">
                 <i class="bi bi-sliders"></i>
-                <span>Módulo de Parametrización</span>
+                <span>Parametrización</span>
                 <i class="bi bi-chevron-down transition-transform" :class="!moduloParametrizacion && '-rotate-90'"></i>
             </button>
             <div x-show="moduloParametrizacion" x-collapse>
@@ -279,7 +275,7 @@
 
             <button @click="moduloTransaccional = !moduloTransaccional" type="button" class="sidebar-module">
                 <i class="bi bi-receipt-cutoff"></i>
-                <span>Módulo Transaccional</span>
+                <span>Transaccional</span>
                 <i class="bi bi-chevron-down transition-transform" :class="!moduloTransaccional && '-rotate-90'"></i>
             </button>
             <div x-show="moduloTransaccional" x-collapse>
@@ -303,7 +299,7 @@
             @role('administrador')
                 <button @click="moduloReportes = !moduloReportes" type="button" class="sidebar-module">
                     <i class="bi bi-file-earmark-bar-graph"></i>
-                    <span>Módulo de Reportes</span>
+                    <span>Reportes</span>
                     <i class="bi bi-chevron-down transition-transform" :class="!moduloReportes && '-rotate-90'"></i>
                 </button>
                 <div x-show="moduloReportes" x-collapse>
@@ -321,6 +317,20 @@
                     </a>
                 </div>
             @endrole
+
+            @can('ver-kpis')
+                <button @click="moduloKpis = !moduloKpis" type="button" class="sidebar-module">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <span>KPIs y Estadísticas</span>
+                    <i class="bi bi-chevron-down transition-transform" :class="!moduloKpis && '-rotate-90'"></i>
+                </button>
+                <div x-show="moduloKpis" x-collapse>
+                    <a href="{{ route('kpis.index') }}"
+                       class="sidebar-link sidebar-sublink {{ request()->routeIs('kpis.index') ? 'sidebar-link-active' : '' }}">
+                        <i class="bi bi-bar-chart-fill"></i> Estadísticas y KPIs
+                    </a>
+                </div>
+            @endcan
         @endhasanyrole
 
         <div class="h-px bg-brand-sub/20 mx-3.5 my-1.5"></div>

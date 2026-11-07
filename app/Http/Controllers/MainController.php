@@ -411,7 +411,7 @@ class MainController extends Controller
         return back()->with('status', "Compra #{$compra->id} eliminada correctamente.");
     }
 
-    public function dashboardIndex()
+    public function kpisIndex()
     {
         $ventasMes = Venta::where('situacion', 'completada')
             ->whereMonth('fecha', now()->month)
@@ -469,10 +469,17 @@ class MainController extends Controller
             ->groupBy('situacion')
             ->pluck('total', 'situacion');
 
-        return view('dashboard', compact(
+        return view('kpis.index', compact(
             'stats', 'stockProductos', 'ultimosPedidos', 'ultimasVentas',
             'ventasUltimosMeses', 'pedidosPorEstado', 'ventasPorEstado'
         ));
+    }
+
+    public function dashboardIndex()
+    {
+        $pedidosPendientes = Pedido::where('situacion', 'pendiente')->count();
+
+        return view('dashboard', compact('pedidosPendientes'));
     }
 
     public function pedidoCheckout(Request $request)

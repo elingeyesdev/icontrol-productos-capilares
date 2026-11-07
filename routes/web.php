@@ -4,12 +4,8 @@ use App\Http\Controllers\MainController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('inicio');
-})->name('inicio');
-
-Route::get('/catalogo', function () {
     return view('welcome');
-})->name('catalogo');
+});
 
 Route::post('/carrito', [MainController::class, 'carritoStore'])->name('carrito.store');
 Route::put('/carrito/{producto}', [MainController::class, 'carritoUpdate'])->name('carrito.update');
@@ -113,6 +109,10 @@ Route::middleware(['auth', 'activo'])->group(function () {
         Route::put('/compras/{compra}', [MainController::class, 'compraUpdate'])->middleware('permission:crear-compras')->name('compras.update');
         Route::delete('/compras/{compra}', [MainController::class, 'compraDestroy'])->middleware('permission:crear-compras')->name('compras.destroy');
         Route::delete('/compras/{compra}/eliminar', [MainController::class, 'compraEliminar'])->middleware('permission:crear-compras')->name('compras.eliminar');
+    });
+
+    Route::middleware('permission:ver-kpis')->group(function () {
+        Route::get('/kpis', [MainController::class, 'kpisIndex'])->name('kpis.index');
     });
 
     Route::middleware('permission:ver-reportes')->prefix('reportes')->name('reportes.')->group(function () {
